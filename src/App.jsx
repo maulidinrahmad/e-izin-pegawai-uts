@@ -134,10 +134,10 @@ function App() {
     };
 
     emailjs.send(
-      'SERVICE_8idlvcd',
-      'TEMPLATE_d5izz7c',
+      'service_8idlvcd',
+      'template_d5izz7c',
       templateParams,
-      'L9kckOLpayPBV7E-n'
+      'qNr-MeM41ouWRh553'
     )
     .then((response) => {
       console.log('SUCCESS!', response.status, response.text);
