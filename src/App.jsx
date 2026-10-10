@@ -114,20 +114,21 @@ function App() {
     if (statusKeputusan === 'Disetujui SDM') {
     // Data yang akan dikirim ke email yang sudah ada
     const templateParams = {
-      nama_pegawai: izinTarget.nama,
-      nip_pegawai: izinTarget.nip,
-      jenis_izin: izinTarget.jenis,
-      tanggal_mulai: izinTarget.tglMulai,
-      tanggal_selesai: izinTarget.tglSelesai,
-      keterangan: izinTarget.keterangan,
-    };
+  to_email: 'maulidinrahmad@gmail.com', // Menentukan email tujuan secara dinamis
+  nama_pegawai: izinTarget.nama,
+  nip_pegawai: izinTarget.nip,
+  jenis_izin: izinTarget.jenis,
+  tanggal_mulai: izinTarget.tglMulai,
+  tanggal_selesai: izinTarget.tglSelesai,
+  keterangan: izinTarget.keterangan,
+};
 
     // Mengirim email menggunakan EmailJS
     emailjs.send(
-      'SERVICE_ID_ANDA',   // Masukkan Service ID dari EmailJS
-      'TEMPLATE_ID_ANDA',  // Masukkan Template ID dari EmailJS
+      'SERVICE_8idlvcd',   // Masukkan Service ID dari EmailJS
+      'TEMPLATE_d5izz7c',  // Masukkan Template ID dari EmailJS
       templateParams,
-      'PUBLIC_KEY_ANDA'    // Masukkan Public Key dari EmailJS
+      'L9kckOLpayPBV7E-n'    // Masukkan Public Key dari EmailJS
     )
     .then(() => {
       alert('Izin berhasil disetujui dan rekapan laporan otomatis terkirim ke email SDM UTS!');
