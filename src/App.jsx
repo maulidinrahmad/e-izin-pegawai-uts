@@ -104,44 +104,56 @@ function App() {
 
   // Aksi Pimpinan SDM (Setujui / Tolak Izin)
   const handleProsesPersetujuan = (id, statusKeputusan) => {
-    setRiwayatIzin(riwayatIzin.map(item => {
-      if (item.id === id) {
-        return { ...item, status: statusKeputusan };
-      }
-      return item;
-    }));
+  // 1. CARI DATA IZIN BERDASARKAN ID TERLEBIH DAHULU
+  const izinTarget = riwayatIzin.find(item => item.id === id);
 
-    if (statusKeputusan === 'Disetujui SDM') {
-    // Data yang akan dikirim ke email yang sudah ada
+  // Jika data tidak ditemukan, hentikan proses
+  if (!izinTarget) {
+    alert('Data izin tidak ditemukan!');
+    return;
+  }
+
+  // 2. UPDATE STATUS PADA STATE
+  setRiwayatIzin(riwayatIzin.map(item => {
+    if (item.id === id) {
+      return { ...item, status: statusKeputusan };
+    }
+    return item;
+  }));
+
+  // 3. JIKA DISETUJUI, KIRIM EMAIL VIA EMAILJS
+  if (statusKeputusan === 'Disetujui SDM') {
     const templateParams = {
-  to_email: 'maulidinrahmad@gmail.com', // Menentukan email tujuan secara dinamis
-  nama_pegawai: izinTarget.nama,
-  nip_pegawai: izinTarget.nip,
-  jenis_izin: izinTarget.jenis,
-  tanggal_mulai: izinTarget.tglMulai,
-  tanggal_selesai: izinTarget.tglSelesai,
-  keterangan: izinTarget.keterangan,
-};
+      to_email: 'maulidinrahmad@gmail.com',
+      nama_pegawai: izinTarget.nama,
+      nip_pegawai: izinTarget.nip,
+      jenis_izin: izinTarget.jenis,
+      tanggal_mulai: izinTarget.tglMulai,
+      tanggal_selesai: izinTarget.tglSelesai,
+      keterangan: izinTarget.keterangan,
+    };
 
-    // Mengirim email menggunakan EmailJS
     emailjs.send(
-      'SERVICE_8idlvcd',   // Masukkan Service ID dari EmailJS
-      'TEMPLATE_d5izz7c',  // Masukkan Template ID dari EmailJS
+      'SERVICE_8idlvcd',
+      'TEMPLATE_d5izz7c',
       templateParams,
-      'L9kckOLpayPBV7E-n'    // Masukkan Public Key dari EmailJS
+      'L9kckOLpayPBV7E-n'
     )
-    .then(() => {
-      alert('Izin berhasil disetujui dan rekapan laporan otomatis terkirim ke email SDM UTS!');
+    .then((response) => {
+      console.log('SUCCESS!', response.status, response.text);
+      alert('Izin berhasil disetujui dan email laporan resmi telah dikirim ke maulidinrahmad@gmail.com!');
     })
     .catch((error) => {
-      console.error('Gagal mengirim email:', error);
-      alert('Izin disetujui, namun gagal mengirimkan email notification.');
+      console.error('FAILED...', error);
+      alert('Izin disetujui, namun gagal mengirimkan email laporan.');
     });
+
   } else {
     alert('Pengajuan izin ditolak.');
   }
 };
 
+   
   const handleMenuClick = (menu) => {
     setActiveMenu(menu);
     setIsSidebarOpen(false);
