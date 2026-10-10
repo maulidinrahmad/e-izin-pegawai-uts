@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './App.css';
 import logoUTS from './assets/logo-uts.png'; // Sesuaikan nama file logo UTS Anda di folder assets
+import emailjs from '@emailjs/browser';
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -111,11 +112,34 @@ function App() {
     }));
 
     if (statusKeputusan === 'Disetujui SDM') {
-      alert('Izin disetujui! Rekapan laporan otomatis terkirim ke email & WhatsApp Bagian SDM UTS.');
-    } else {
-      alert('Pengajuan izin ditolak.');
-    }
-  };
+    // Data yang akan dikirim ke email yang sudah ada
+    const templateParams = {
+      nama_pegawai: izinTarget.nama,
+      nip_pegawai: izinTarget.nip,
+      jenis_izin: izinTarget.jenis,
+      tanggal_mulai: izinTarget.tglMulai,
+      tanggal_selesai: izinTarget.tglSelesai,
+      keterangan: izinTarget.keterangan,
+    };
+
+    // Mengirim email menggunakan EmailJS
+    emailjs.send(
+      'SERVICE_ID_ANDA',   // Masukkan Service ID dari EmailJS
+      'TEMPLATE_ID_ANDA',  // Masukkan Template ID dari EmailJS
+      templateParams,
+      'PUBLIC_KEY_ANDA'    // Masukkan Public Key dari EmailJS
+    )
+    .then(() => {
+      alert('Izin berhasil disetujui dan rekapan laporan otomatis terkirim ke email SDM UTS!');
+    })
+    .catch((error) => {
+      console.error('Gagal mengirim email:', error);
+      alert('Izin disetujui, namun gagal mengirimkan email notification.');
+    });
+  } else {
+    alert('Pengajuan izin ditolak.');
+  }
+};
 
   const handleMenuClick = (menu) => {
     setActiveMenu(menu);
