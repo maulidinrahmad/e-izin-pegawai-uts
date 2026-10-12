@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './App.css';
-import logoUTS from './assets/logo-uts.png'; // Sesuaikan nama file logo UTS Anda di folder assets
+import logoUTS from './assets/logo-uts.png'; 
+import bgUTS from './assets/uts.jpg'; 
 import emailjs from '@emailjs/browser';
 
 function App() {
@@ -10,12 +11,12 @@ function App() {
   const [activeMenu, setActiveMenu] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Database Pegawai & Pimpinan SDM UTS
-  const [pegawaiList, setPegawaiList] = useState([
-    { id: 'SDM01', nama: 'Dr. Ir. Pimpinan SDM', nip: '19750101', jabatan: 'Kepala Bagian SDM', departemen: 'Kepegawaian UTS', role: 'sdm' },
-    { id: 'ADMIN', nama: 'Administrator Utama', nip: '000', jabatan: 'Staff IT Admin', departemen: 'Pusat Data UTS', role: 'admin' },
-    { id: 'PGW001', nama: 'Budi Santoso, M.Kom.', nip: '198501012010', jabatan: 'Dosen / Staff Prodi', departemen: 'Fakultas Teknik', role: 'pegawai' },
-    { id: 'PGW002', nama: 'Siti Aminah, S.E.', nip: '199005122015', jabatan: 'Staff Administrasi', departemen: 'Biro Keuangan', role: 'pegawai' },
+  // Database Pegawai & Pimpinan SDM UTS (Lengkap dengan properti role dan jatahCuti)
+  const [daftarPegawai, setDaftarPegawai] = useState([
+    { id: 'SDM01', nama: 'Pimpinan SDM UTS', nip: 'SDM01', departemen: 'Biro Kepegawaian', jabatan: 'Kepala Bagian SDM', role: 'sdm', jatahCuti: 12 },
+    { id: 'ADMIN', nama: 'Admin Sistem', nip: 'ADM001', departemen: 'Puskom UTS', jabatan: 'Administrator IT', role: 'admin', jatahCuti: 12 },
+    { id: 'PGW001', nama: 'Dr. Ahmad Dahlan, M.T.', nip: '198501012010', departemen: 'Fakultas Teknik', jabatan: 'Dosen Informatika', role: 'pegawai', jatahCuti: 12 },
+    { id: 'PGW002', nama: 'Siti Rahma, S.Kom., M.Cs.', nip: '198502022012', departemen: 'Fakultas Teknik', jabatan: 'Dosen Sistem Informasi', role: 'pegawai', jatahCuti: 12 }
   ]);
 
   const [formPegawai, setFormPegawai] = useState({
@@ -24,7 +25,8 @@ function App() {
     nip: '',
     jabatan: '',
     departemen: 'Fakultas Teknik',
-    role: 'pegawai'
+    role: 'pegawai',
+    jatahCuti: 12
   });
 
   const [formData, setFormData] = useState({
@@ -36,13 +38,13 @@ function App() {
 
   // Daftar Pengajuan Izin
   const [riwayatIzin, setRiwayatIzin] = useState([
-    { id: 1, nama: 'Budi Santoso, M.Kom.', nip: '198501012010', jenis: 'Sakit', tglMulai: '2026-10-15', tglSelesai: '2026-10-16', keterangan: 'Demam dan istirahat dokter', status: 'Menunggu Persetujuan SDM' }
+    { id: 1, nama: 'Dr. Ahmad Dahlan, M.T.', nip: '198501012010', jenis: 'Sakit', tglMulai: '2026-10-15', tglSelesai: '2026-10-16', keterangan: 'Demam dan istirahat dokter', status: 'Menunggu Persetujuan SDM' }
   ]);
 
   // Fungsi Login
   const handleLogin = (e) => {
     e.preventDefault();
-    const found = pegawaiList.find(p => p.id.toLowerCase() === loginInput.trim().toLowerCase());
+    const found = daftarPegawai.find(p => p.id.toLowerCase() === loginInput.trim().toLowerCase());
     if (found) {
       setCurrentUser(found);
       setActiveMenu('dashboard');
@@ -57,16 +59,17 @@ function App() {
     setLoginInput('');
   };
 
-  // Tambah Pegawai (oleh Admin)
+  // Tambah Pegawai (oleh Admin) - Menggunakan daftarPegawai
   const handleSavePegawai = (e) => {
     e.preventDefault();
     const pegawaiBaru = {
       ...formPegawai,
-      id: formPegawai.id || `PGW00${pegawaiList.length + 1}`
+      id: formPegawai.id || `PGW00${daftarPegawai.length + 1}`,
+      jatahCuti: 12
     };
-    setPegawaiList([...pegawaiList, pegawaiBaru]);
+    setDaftarPegawai([...daftarPegawai, pegawaiBaru]);
     alert('Data pegawai UTS berhasil ditambahkan!');
-    setFormPegawai({ id: '', nama: '', nip: '', jabatan: '', departemen: 'Fakultas Teknik', role: 'pegawai' });
+    setFormPegawai({ id: '', nama: '', nip: '', jabatan: '', departemen: 'Fakultas Teknik', role: 'pegawai', jatahCuti: 12 });
   };
 
   const handleDeletePegawai = (id) => {
@@ -74,8 +77,8 @@ function App() {
       alert('Akun Utama SDM / Admin tidak dapat dihapus!');
       return;
     }
-    if (confirm('Yakin ingin menghapus data pegawai ini?')) {
-      setPegawaiList(pegawaiList.filter(p => p.id !== id));
+    if (window.confirm('Yakin ingin menghapus data pegawai ini?')) {
+      setDaftarPegawai(daftarPegawai.filter(p => p.id !== id));
     }
   };
 
@@ -102,58 +105,73 @@ function App() {
     setFormData({ jenisIzin: 'Sakit', tanggalMulai: '', tanggalSelesai: '', keterangan: '' });
   };
 
-  // Aksi Pimpinan SDM (Setujui / Tolak Izin)
+  // Aksi Pimpinan SDM (Setujui / Tolak Izin) & Otomatis Potong Cuti
   const handleProsesPersetujuan = (id, statusKeputusan) => {
-  // 1. CARI DATA IZIN BERDASARKAN ID TERLEBIH DAHULU
-  const izinTarget = riwayatIzin.find(item => item.id === id);
+    const izinTarget = riwayatIzin.find(item => item.id === id);
 
-  // Jika data tidak ditemukan, hentikan proses
-  if (!izinTarget) {
-    alert('Data izin tidak ditemukan!');
-    return;
-  }
-
-  // 2. UPDATE STATUS PADA STATE
-  setRiwayatIzin(riwayatIzin.map(item => {
-    if (item.id === id) {
-      return { ...item, status: statusKeputusan };
+    if (!izinTarget) {
+      alert('Data izin tidak ditemukan!');
+      return;
     }
-    return item;
-  }));
 
-  // 3. JIKA DISETUJUI, KIRIM EMAIL VIA EMAILJS
-  if (statusKeputusan === 'Disetujui SDM') {
-    const templateParams = {
-      to_email: 'maulidinrahmad@gmail.com',
-      nama_pegawai: izinTarget.nama,
-      nip_pegawai: izinTarget.nip,
-      jenis_izin: izinTarget.jenis,
-      tanggal_mulai: izinTarget.tglMulai,
-      tanggal_selesai: izinTarget.tglSelesai,
-      keterangan: izinTarget.keterangan,
+    const hitungHari = (tglMulai, tglSelesai) => {
+      if (!tglMulai || !tglSelesai) return 1;
+      const start = new Date(tglMulai);
+      const end = new Date(tglSelesai);
+      const diffTime = Math.abs(end - start);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      return diffDays || 1;
     };
 
-    emailjs.send(
-      'service_8idlvcd',
-      'template_d5izz7c',
-      templateParams,
-      'qNr-MeM41ouWRh553'
-    )
-    .then((response) => {
-      console.log('SUCCESS!', response.status, response.text);
-      alert('Izin berhasil disetujui dan email laporan resmi telah dikirim ke maulidinrahmad@gmail.com!');
-    })
-    .catch((error) => {
-      console.error('FAILED...', error);
-      alert('Izin disetujui, namun gagal mengirimkan email laporan.');
-    });
+    const durasiHari = hitungHari(izinTarget.tglMulai, izinTarget.tglSelesai);
 
-  } else {
-    alert('Pengajuan izin ditolak.');
-  }
-};
+    // Jika disetujui dan jenisnya cuti, potong jatah cuti pegawai
+    if (statusKeputusan === 'Disetujui SDM' && izinTarget.jenis?.toLowerCase().includes('cuti')) {
+      setDaftarPegawai(prev => prev.map(pgw => {
+        if (pgw.nip === izinTarget.nip || pgw.id === izinTarget.nip) {
+          const sisaBaru = Math.max(0, pgw.jatahCuti - durasiHari);
+          return { ...pgw, jatahCuti: sisaBaru };
+        }
+        return pgw;
+      }));
+    }
 
-   
+    setRiwayatIzin(riwayatIzin.map(item => {
+      if (item.id === id) {
+        return { ...item, status: statusKeputusan };
+      }
+      return item;
+    }));
+
+    if (statusKeputusan === 'Disetujui SDM') {
+      const templateParams = {
+        to_email: 'samsu.alfin@uts.ac.id',
+        nama_pegawai: izinTarget.nama || '',
+        nip_pegawai: izinTarget.nip || '',
+        jenis_izin: izinTarget.jenis || '',
+        tanggal_mulai: izinTarget.tglMulai || '',
+        tanggal_selesai: izinTarget.tglSelesai || '',
+        keterangan: izinTarget.keterangan || '',
+      };
+
+      emailjs.send(
+        'service_8idlvcd',
+        'TEMPLATE_d5izz7c',
+        templateParams,
+        'L9kckOLpayPBV7E-n'
+      )
+      .then(() => {
+        alert('Izin/Cuti berhasil disetujui! Kuota cuti terpotong dan email laporan terkirim.');
+      })
+      .catch((err) => {
+        console.error(err);
+        alert('Izin disetujui, namun gagal mengirimkan email.');
+      });
+    } else {
+      alert('Pengajuan izin ditolak.');
+    }
+  };
+
   const handleMenuClick = (menu) => {
     setActiveMenu(menu);
     setIsSidebarOpen(false);
@@ -162,8 +180,46 @@ function App() {
   // ================= HALAMAN LOGIN =================
   if (!currentUser) {
     return (
-      <div style={styles.loginWrapper}>
-        <div style={styles.loginCard}>
+      <div 
+        style={{
+          position: 'relative',
+          minHeight: '100vh',
+          width: '100%',
+          backgroundImage: `url(${bgUTS})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px'
+        }}
+      >
+        <div 
+          className="backdrop" 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 1
+          }}
+        ></div>
+
+        <div 
+          style={{
+            ...styles.loginCard,
+            position: 'relative',
+            zIndex: 2,
+            backgroundColor: 'rgba(255, 255, 255, 0.85)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2)',
+            border: '1px solid rgba(255, 255, 255, 0.4)'
+          }}
+        >
           <div style={{ textAlign: 'center', marginBottom: '20px' }}>
             <img 
               src={logoUTS} 
@@ -173,6 +229,7 @@ function App() {
             <h2 style={{ fontSize: '20px', color: '#1e293b' }}>E-Izin Pegawai UTS</h2>
             <p style={{ color: '#666', fontSize: '13px', marginTop: '5px' }}>Universitas Teknologi Sumbawa (UTS)</p>
           </div>
+
           <form onSubmit={handleLogin} className="form-box">
             <div className="form-group">
               <label className="form-label">ID / NIP Pegawai</label>
@@ -185,11 +242,16 @@ function App() {
                 required 
               />
             </div>
-            <button type="submit" className="btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: '10px', backgroundColor: '#f59e0b' }}>
+            <button 
+              type="submit" 
+              className="btn-primary" 
+              style={{ width: '100%', justifyContent: 'center', marginTop: '10px', backgroundColor: '#f59e0b' }}
+            >
               <i className="fa-solid fa-right-to-bracket"></i> Masuk Portal
             </button>
           </form>
-          <div style={{ marginTop: '20px', padding: '12px', backgroundColor: '#f1f5f9', borderRadius: '6px', fontSize: '12px', color: '#475569', lineHeight: '1.5' }}>
+
+          <div style={{ marginTop: '20px', padding: '12px', backgroundColor: 'rgba(241, 245, 249, 0.7)', borderRadius: '6px', fontSize: '12px', color: '#475569', lineHeight: '1.5' }}>
             <b>Akun Demo Simulasi:</b><br/>
             - Pimpinan SDM: <code>SDM01</code><br/>
             - Admin Sistem: <code>ADMIN</code><br/>
@@ -268,7 +330,7 @@ function App() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
             <div className="user-profile">
               <i className="fa-solid fa-circle-user" style={{ fontSize: '24px', color: '#f59e0b' }}></i>
-              <span>{currentUser.nama} ({currentUser.role.toUpperCase()})</span>
+              <span>{currentUser.nama} ({currentUser?.role ? currentUser.role.toUpperCase() : 'USER'})</span>
             </div>
             <button onClick={handleLogout} style={styles.btnLogout}>
               <i className="fa-solid fa-power-off"></i> Keluar
@@ -282,7 +344,7 @@ function App() {
               <div className="card-grid">
                 <div className="card">
                   <h3>Total Pegawai UTS</h3>
-                  <p className="card-value">{pegawaiList.length}</p>
+                  <p className="card-value">{daftarPegawai.length}</p>
                 </div>
                 <div className="card">
                   <h3>Izin Menunggu</h3>
@@ -305,6 +367,49 @@ function App() {
                   Setelah disetujui, laporan rekapan otomatis dikirimkan ke email Bagian SDM.
                 </p>
               </div>
+
+              {/* Tabel Rekap Cuti Pegawai Khusus untuk Pimpinan SDM di Dashboard */}
+              {currentUser.role === 'sdm' && (
+                <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', marginTop: '20px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+                  <h3 style={{ marginBottom: '15px', color: '#1e293b' }}>
+                    <i className="fa-solid fa-users" style={{ marginRight: '8px', color: '#0284c7' }}></i>
+                    Rekapitulasi Jatah Cuti Pegawai UTS (12 Hari/Tahun)
+                  </h3>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
+                      <thead>
+                        <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                          <th style={{ padding: '10px' }}>NIP / ID</th>
+                          <th style={{ padding: '10px' }}>Nama Pegawai</th>
+                          <th style={{ padding: '10px' }}>Jabatan</th>
+                          <th style={{ padding: '10px', textAlign: 'center' }}>Kuota Awal</th>
+                          <th style={{ padding: '10px', textAlign: 'center' }}>Terpakai</th>
+                          <th style={{ padding: '10px', textAlign: 'center' }}>Sisa Cuti</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {daftarPegawai.map((pgw) => {
+                          const terpakai = 12 - pgw.jatahCuti;
+                          return (
+                            <tr key={pgw.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                              <td style={{ padding: '10px', fontWeight: 'bold' }}>{pgw.nip}</td>
+                              <td style={{ padding: '10px' }}>{pgw.nama}</td>
+                              <td style={{ padding: '10px' }}>{pgw.jabatan}</td>
+                              <td style={{ padding: '10px', textAlign: 'center' }}>12 Hari</td>
+                              <td style={{ padding: '10px', textAlign: 'center', color: terpakai > 0 ? '#dc2626' : '#64748b' }}>{terpakai} Hari</td>
+                              <td style={{ padding: '10px', textAlign: 'center' }}>
+                                <span style={{ padding: '3px 10px', borderRadius: '12px', backgroundColor: pgw.jatahCuti > 3 ? '#dcfce7' : '#fee2e2', color: pgw.jatahCuti > 3 ? '#15803d' : '#991b1b', fontWeight: 'bold' }}>
+                                  {pgw.jatahCuti} Hari
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -314,6 +419,24 @@ function App() {
               <p style={{ fontSize: '13px', color: '#666', marginBottom: '15px' }}>
                 Pengajuan ini akan dikirimkan kepada Pimpinan Bagian SDM UTS atas nama Anda.
               </p>
+              
+              {/* Card Sisa Cuti Pegawai */}
+              <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '15px 20px', marginBottom: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '5px solid #f59e0b' }}>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '14px', color: '#1e293b' }}>Sisa Kuota Cuti Tahunan Anda</h4>
+                  <p style={{ margin: '3px 0 0 0', fontSize: '12px', color: '#64748b' }}>Batas maksimal: 12 Hari per Tahun</p>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <span style={{ fontSize: '22px', fontWeight: 'bold', color: '#0284c7' }}>
+                    {(() => {
+                      const pgwData = daftarPegawai.find(p => p.nip === currentUser?.nip || p.id === currentUser?.id);
+                      return pgwData?.jatahCuti ?? 12;
+                    })()}
+                  </span>
+                  <span style={{ fontSize: '12px', color: '#64748b', marginLeft: '4px' }}>Hari Tersisa</span>
+                </div>
+              </div>
+
               <form onSubmit={handleSubmitIzin} className="form-box">
                 <div className="form-group">
                   <label className="form-label">Nama Pemohon</label>
@@ -457,7 +580,7 @@ function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {pegawaiList.map((p) => (
+                    {daftarPegawai.map((p) => (
                       <tr key={p.id} className="td-tr">
                         <td className="td-cell"><b>{p.id}</b></td>
                         <td className="td-cell">{p.nama}<br/><small style={{color:'#666'}}>{p.nip}</small></td>

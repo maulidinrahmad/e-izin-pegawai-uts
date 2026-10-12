@@ -17,6 +17,38 @@ body {
   position: relative;
 }
 
+/* Styling Container Login dengan Background Foto UTS */
+.login-bg-container {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  /* Memanggil gambaruts.jpg dari folder src/assets */
+  background-image: url('./assets/uts.jpg'); 
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Lapisan Melapisi Foto Agar Gelap/Transparan (Backdrop) */
+.backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5); /* Efek gelap 50% */
+  z-index: 1; /* Di atas gambar background, di bawah kartu login */
+}
+
+/* Memastikan Kartu/Form Login Berada di Atas Backdrop */
+.login-card-container {
+  position: relative;
+  z-index: 2; /* Agar form/kartu login berada di atas backdrop */
+}
+
 /* Sidebar */
 .sidebar {
   width: 260px;
@@ -75,7 +107,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0,0,0,0.5);
+  background-color: rgba(228, 179, 17, 0.5);
   z-index: 999;
 }
 
@@ -164,7 +196,7 @@ body {
 .form-label {
   font-size: 14px;
   font-weight: 600;
-  color: #475569;
+  color: #f8f9fa;
 }
 
 .form-input {
