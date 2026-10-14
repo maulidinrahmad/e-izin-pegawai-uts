@@ -352,13 +352,49 @@ function App() {
     }
   };
 
+  // Handler Download Template Form Cuti Resmi yang Aman untuk GitHub Pages
   const handleDownloadTemplateCuti = () => {
+    // Membuat konten teks sederhana sebagai pengganti dokumen template form cuti resmi UTS
+    const templateContent = `UNIVERSITAS TEKNOLOGI SUMBAWA (UTS)
+FORMULIR PERMOHONAN CUTI PEGAWAI / DOSEN
+Tahun 2026
+
+--------------------------------------------------
+1. DATA PEMOHON
+   - Nama Lengkap : 
+   - NIP / NIDN   : 
+   - Unit Kerja   : 
+   - Jabatan      : 
+
+2. JENIS CUTI YANG DIAJUKAN
+   [  ] ______________  [  ] ______________
+   [  ] ______________  [  ] ______________
+
+3. TANGGAL CUTI
+   - Mulai Tanggal : 
+   - Selesai Tgl   : 
+   - Lama Cuti     :      Hari
+
+4. ALASAN CUTI :
+   ________________________________________________
+
+--------------------------------------------------
+Disetujui oleh Pejabat Berwenang,        Pemohon,
+
+
+(__________________________)            (__________________________)
+`;
+
+    // Membuat file virtual berbasis Blob agar bisa didownload langsung dari browser
+    const blob = new Blob([templateContent], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
     const element = document.createElement("a");
-    element.href = "/form-cuti-uts-2026.docx"; 
+    element.href = url;
     element.download = "Formulir_Cuti_Pegawai_UTS_2026.docx";
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
+    URL.revokeObjectURL(url);
   };
 
   const handleExportExcel = () => {
