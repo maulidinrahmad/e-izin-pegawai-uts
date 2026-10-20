@@ -99,21 +99,19 @@ function App() {
     fileDataUrl: ''
   });
 
-  // State Form Cuti
+  // State Form Cuti (Tanpa Upload File)
   const [formCuti, setFormCuti] = useState({
     jenisCuti: 'Cuti Tahunan',
     tanggalMulai: '',
     tanggalSelesai: '',
-    keterangan: '',
-    namaFile: '',
-    fileDataUrl: ''
+    keterangan: ''
   });
 
   // Master List Seluruh Pengajuan
   const [riwayatIzin, setRiwayatIzin] = useState([
-    { id: 1, kategori: 'Cuti', nama: 'Dr. Ahmad Dahlan, M.T.', nip: '198501012010', jabatan: 'Dosen Informatika', rolePemohon: 'dosen', jenis: 'Cuti Tahunan', tglMulai: '2026-10-14', tglSelesai: '2026-10-15', durasi: 2, keterangan: 'Cuti ke Mataram', namaFile: 'form-cuti-uts-2026.docx', fileDataUrl: '#', status: 'Disetujui oleh Kaprodi Informatika' },
+    { id: 1, kategori: 'Cuti', nama: 'Dr. Ahmad Dahlan, M.T.', nip: '198501012010', jabatan: 'Dosen Informatika', rolePemohon: 'dosen', jenis: 'Cuti Tahunan', tglMulai: '2026-10-14', tglSelesai: '2026-10-15', durasi: 2, keterangan: 'Cuti ke Mataram', namaFile: '-', fileDataUrl: '', status: 'Disetujui oleh Kaprodi Informatika' },
     { id: 2, kategori: 'Izin', nama: 'Dr. Ahmad Dahlan, M.T.', nip: '198501012010', jabatan: 'Dosen Informatika', rolePemohon: 'dosen', jenis: 'Sakit', tglMulai: '2026-10-15', tglSelesai: '2026-10-16', durasi: 2, keterangan: 'Demam dan istirahat dokter', namaFile: 'Surat_Keterangan_Dokter.pdf', fileDataUrl: '#', status: 'Menunggu Persetujuan Kaprodi' },
-    { id: 3, kategori: 'Cuti', nama: 'Siti Rahma, S.Kom.', nip: '198802022012', jabatan: 'Staf TU Fakultas Teknik', rolePemohon: 'tendik_fakultas', jenis: 'Cuti Tahunan', tglMulai: '2026-10-20', tglSelesai: '2026-10-22', durasi: 3, keterangan: 'Acara keluarga di Mataram', namaFile: 'Form_Cuti_Siti_Signed.docx', fileDataUrl: '#', status: 'Disetujui oleh Dekan Fakultas Teknik' }
+    { id: 3, kategori: 'Cuti', nama: 'Siti Rahma, S.Kom.', nip: '198802022012', jabatan: 'Staf TU Fakultas Teknik', rolePemohon: 'tendik_fakultas', jenis: 'Cuti Tahunan', tglMulai: '2026-10-20', tglSelesai: '2026-10-22', durasi: 3, keterangan: 'Acara keluarga di Mataram', namaFile: '-', fileDataUrl: '', status: 'Disetujui oleh Dekan Fakultas Teknik' }
   ]);
 
   // Utility Hitung Durasi Hari
@@ -337,66 +335,6 @@ function App() {
     }
   };
 
-  const handleFileChangeCuti = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (uploadEvent) => {
-        setFormCuti({ 
-          ...formCuti, 
-          namaFile: file.name, 
-          fileDataUrl: uploadEvent.target.result 
-        });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Handler Download Template Form Cuti Resmi yang Aman untuk GitHub Pages
-  const handleDownloadTemplateCuti = () => {
-    // Membuat konten teks sederhana sebagai pengganti dokumen template form cuti resmi UTS
-    const templateContent = `UNIVERSITAS TEKNOLOGI SUMBAWA (UTS)
-FORMULIR PERMOHONAN CUTI PEGAWAI / DOSEN
-Tahun 2026
-
---------------------------------------------------
-1. DATA PEMOHON
-   - Nama Lengkap : 
-   - NIP / NIDN   : 
-   - Unit Kerja   : 
-   - Jabatan      : 
-
-2. JENIS CUTI YANG DIAJUKAN
-   [  ] ______________  [  ] ______________
-   [  ] ______________  [  ] ______________
-
-3. TANGGAL CUTI
-   - Mulai Tanggal : 
-   - Selesai Tgl   : 
-   - Lama Cuti     :      Hari
-
-4. ALASAN CUTI :
-   ________________________________________________
-
---------------------------------------------------
-Disetujui oleh Pejabat Berwenang,        Pemohon,
-
-
-(__________________________)            (__________________________)
-`;
-
-    // Membuat file virtual berbasis Blob agar bisa didownload langsung dari browser
-    const blob = new Blob([templateContent], { type: 'application/msword' });
-    const url = URL.createObjectURL(blob);
-    const element = document.createElement("a");
-    element.href = url;
-    element.download = "Formulir_Cuti_Pegawai_UTS_2026.docx";
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-    URL.revokeObjectURL(url);
-  };
-
   const handleExportExcel = () => {
     let tableHTML = `
       <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
@@ -439,7 +377,7 @@ Disetujui oleh Pejabat Berwenang,        Pemohon,
           <td>${item.tglSelesai}</td>
           <td>${item.durasi}</td>
           <td>${item.keterangan}</td>
-          <td>${item.namaFile}</td>
+          <td>${item.namaFile || '-'}</td>
           <td>${item.status}</td>
         </tr>
       `;
@@ -514,14 +452,14 @@ Disetujui oleh Pejabat Berwenang,        Pemohon,
       tglSelesai: formCuti.tanggalSelesai,
       durasi: durasi,
       keterangan: formCuti.keterangan,
-      namaFile: formCuti.namaFile || 'Tidak Ada Lampiran Form Cuti',
-      fileDataUrl: formCuti.fileDataUrl || '',
+      namaFile: '-',
+      fileDataUrl: '',
       status: initialStatus
     };
 
     setRiwayatIzin([cutiBaru, ...riwayatIzin]);
     alert(`Permohonan CUTI (${durasi} Hari) berhasil dikirim! Status: ${initialStatus}`);
-    setFormCuti({ jenisCuti: daftarJenisCuti[0]?.nama || 'Cuti Tahunan', tanggalMulai: '', tanggalSelesai: '', keterangan: '', namaFile: '', fileDataUrl: '' });
+    setFormCuti({ jenisCuti: daftarJenisCuti[0]?.nama || 'Cuti Tahunan', tanggalMulai: '', tanggalSelesai: '', keterangan: '' });
   };
 
   const handleProsesPersetujuan = (id, statusKeputusan) => {
@@ -1028,24 +966,6 @@ Disetujui oleh Pejabat Berwenang,        Pemohon,
                 </p>
               </div>
 
-              {/* Banner Unduh Template Form Cuti Word */}
-              <div style={{ backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', padding: '12px 15px', borderRadius: '8px', marginBottom: '15px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#1e293b' }}>
-                    <i className="fa-solid fa-file-word" style={{ color: '#2563eb', marginRight: '6px' }}></i>
-                    Template Form Cuti Resmi UTS (.docx)
-                  </div>
-                  <div style={{ fontSize: '11px', color: '#64748b' }}>Unduh, isi data, dan unggah kembali di bawah ini.</div>
-                </div>
-                <button 
-                  type="button" 
-                  onClick={handleDownloadTemplateCuti}
-                  style={{ backgroundColor: '#2563eb', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px' }}
-                >
-                  <i className="fa-solid fa-download"></i> Unduh Form
-                </button>
-              </div>
-
               <div style={{ backgroundColor: '#f0f9ff', padding: '12px 15px', borderRadius: '8px', marginBottom: '15px', border: '1px solid #bae6fd', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '13px', color: '#0369a1', fontWeight: '500' }}>Sisa Kuota Cuti Tahunan Anda:</span>
                 <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#0284c7' }}>
@@ -1089,24 +1009,6 @@ Disetujui oleh Pejabat Berwenang,        Pemohon,
                 <div className="form-group">
                   <label className="form-label">Alasan Cuti & Catatan Tambahan</label>
                   <textarea value={formCuti.keterangan} onChange={(e) => setFormCuti({...formCuti, keterangan: e.target.value})} rows="3" className="form-input" required placeholder="Tuliskan keterangan lengkap pengajuan cuti..."></textarea>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">
-                    <i className="fa-solid fa-file-arrow-up" style={{ marginRight: '5px', color: '#0284c7' }}></i>
-                    Upload Form Cuti Terisi (Word / PDF / Scan TTD)
-                  </label>
-                  <input 
-                    type="file" 
-                    onChange={handleFileChangeCuti} 
-                    className="form-input" 
-                    accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
-                  />
-                  {formCuti.namaFile && (
-                    <small style={{ color: '#059669', marginTop: '5px', display: 'block', fontWeight: 'bold' }}>
-                      <i className="fa-solid fa-file-check"></i> Form Cuti Terunggah: {formCuti.namaFile}
-                    </small>
-                  )}
                 </div>
 
                 <button type="submit" className="btn-green">
@@ -1156,7 +1058,7 @@ Disetujui oleh Pejabat Berwenang,        Pemohon,
                         <td className="td-cell">{item.durasi} Hari</td>
                         <td className="td-cell">
                           {item.keterangan}<br/>
-                          {item.namaFile && (
+                          {item.namaFile && item.namaFile !== '-' && (
                             <small style={{ color: '#0284c7', fontWeight: 'bold' }}>
                               <i className="fa-solid fa-paperclip"></i> {item.namaFile}
                             </small>
@@ -1472,7 +1374,7 @@ Disetujui oleh Pejabat Berwenang,        Pemohon,
                 <div>
                   <h3 style={{ margin: 0, color: '#1e293b' }}>Rekapitulasi Permohonan Izin & Cuti Seluruh Pegawai UTS</h3>
                   <p style={{ fontSize: '12px', color: '#64748b', margin: '4px 0 0 0' }}>
-                    {currentUser.role === 'admin' ? 'Akses Admin Sistem: Anda dapat melihat sisa jatah cuti pegawai, mengunduh lampiran, dan mengekspor rekap ke Excel.' : 'Menampilkan rekapitulasi riwayat pengajuan.'}
+                    {currentUser.role === 'admin' ? 'Akses Admin Sistem: Anda dapat melihat sisa jatah cuti pegawai, mengekspor rekap ke Excel, dan memantau status pengajuan.' : 'Menampilkan rekapitulasi riwayat pengajuan.'}
                   </p>
                 </div>
 
@@ -1552,8 +1454,8 @@ Disetujui oleh Pejabat Berwenang,        Pemohon,
                               <i className="fa-solid fa-download"></i> {item.namaFile}
                             </a>
                           ) : (
-                            <span style={{ color: '#0284c7', fontWeight: 'bold', fontSize: '12px' }}>
-                              <i className="fa-solid fa-file"></i> {item.namaFile || 'Tidak Ada File'}
+                            <span style={{ color: '#64748b', fontSize: '12px' }}>
+                              {item.namaFile || '-'}
                             </span>
                           )}
                         </td>
