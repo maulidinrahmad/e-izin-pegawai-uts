@@ -19,23 +19,24 @@ function App() {
   const [daftarFakultas, setDaftarFakultas] = useState([
     { id: 'FK01', nama: 'Fakultas Teknik' },
     { id: 'FK02', nama: 'Fakultas Ekonomi & Bisnis' },
-    { id: 'FK03', nama: 'Fakultas Ilmu Teknologi Hayati' }
+    { id: 'FK03', nama: 'Fakultas Hukum' }
   ]);
 
   const [daftarProdi, setDaftarProdi] = useState([
     { id: 'PR01', fakultas: 'Fakultas Teknik', nama: 'S1 Teknik Informatika' },
     { id: 'PR02', fakultas: 'Fakultas Teknik', nama: 'S1 Teknik Sipil' },
-    { id: 'PR03', fakultas: 'Fakultas Ekonomi & Bisnis', nama: 'S1 Manajemen' }
+    { id: 'PR03', fakultas: 'Fakultas Ekonomi & Bisnis', nama: 'S1 Akuntansi' },
+    { id: 'PR04', fakultas: 'Fakultas Hukum', nama: 'S1 Ilmu Hukum' }
   ]);
 
   const [daftarSatker, setDaftarSatker] = useState([
     { id: 'SK01', nama: 'Biro Kepegawaian & SDM' },
     { id: 'SK02', nama: 'Pusat Komputer & Data (Puskom)' },
-    { id: 'SK03', nama: 'Biro Administrasi Akademik & Kemahasiswaan' },
+    { id: 'SK03', nama: 'Biro Administrasi Akademik' },
     { id: 'SK04', nama: 'Rektorat UTS' }
   ]);
 
-  // Database Dinamis Master Jenis Izin & Cuti (Dapat dikelola Admin)
+  // Database Dinamis Master Jenis Izin & Cuti
   const [daftarJenisIzin, setDaftarJenisIzin] = useState([
     { id: 'JI01', nama: 'Sakit (Dengan / Tanpa Surat Dokter)' },
     { id: 'JI02', nama: 'Izin Keperluan Pribadi Mendesak' },
@@ -50,7 +51,7 @@ function App() {
     { id: 'JC05', nama: 'Cuti Besar' }
   ]);
 
-  // State Input Form Manajemen Admin (Fakultas, Prodi, Satker, Jenis Izin/Cuti)
+  // State Input Form Admin (Fakultas, Prodi, Satker, Jenis Izin/Cuti)
   const [inputFakultas, setInputFakultas] = useState('');
   const [inputProdi, setInputProdi] = useState('');
   const [pilihFakultasProdi, setPilihFakultasProdi] = useState('Fakultas Teknik');
@@ -60,19 +61,31 @@ function App() {
 
   // Database Pegawai, Pejabat & Admin UTS
   const [daftarPegawai, setDaftarPegawai] = useState([
-    { id: 'ADM01', username: 'admin', password: '123', nama: 'Admin Sistem IT', nip: 'ADM001', departemen: 'Puskom UTS', jabatan: 'Administrator IT', role: 'admin', jatahCuti: 12, statusAkun: 'Aktif' },
-    { id: 'KAPRODI01', username: 'kaprodi', password: '123', nama: 'Andi Wijaya, M.T.', nip: '198001012015', departemen: 'Fakultas Teknik', jabatan: 'Kaprodi Informatika', role: 'kaprodi', jatahCuti: 12, statusAkun: 'Aktif' },
-    { id: 'DEKAN01', username: 'dekan', password: '123', nama: 'Prof. Dr. Ir. Herman, M.Sc.', nip: '197505052008', departemen: 'Fakultas Teknik', jabatan: 'Dekan Fakultas Teknik', role: 'dekan', jatahCuti: 12, statusAkun: 'Aktif' },
-    { id: 'DIR01', username: 'kepalaunit', password: '123', nama: 'Hendra, S.E., M.M.', nip: '198203032011', departemen: 'Biro Kepegawaian', jabatan: 'Kepala Biro SDM / Direktur', role: 'kepala_unit', jatahCuti: 12, statusAkun: 'Aktif' },
-    { id: 'REKTOR01', username: 'rektor', password: '123', nama: 'Dr. Nikolas, M.Si.', nip: '197001012000', departemen: 'Rektorat UTS', jabatan: 'Rektor UTS', role: 'rektor', jatahCuti: 12, statusAkun: 'Aktif' },
-    { id: 'PGW001', username: 'dosen1', password: '123', nama: 'Dr. Ahmad Dahlan, M.T.', nip: '198501012010', departemen: 'Fakultas Teknik', jabatan: 'Dosen Informatika', role: 'dosen', jatahCuti: 10, statusAkun: 'Aktif' },
-    { id: 'PGW002', username: 'tendik1', password: '123', nama: 'Siti Rahma, S.Kom.', nip: '198802022012', departemen: 'Fakultas Teknik', jabatan: 'Staf TU Fakultas Teknik', role: 'tendik_fakultas', jatahCuti: 9, statusAkun: 'Aktif' }
+    { id: 'ADM01', username: 'admin', password: '123', nama: 'Admin Sistem IT', nip: 'ADM001', fakultas: '', prodi: '', satker: 'Pusat Komputer & Data (Puskom)', jabatan: 'Administrator IT', role: 'admin', jatahCuti: 12, statusAkun: 'Aktif' },
+    { id: 'REKTOR01', username: 'rektor', password: '123', nama: 'Dr. Nikolas, M.Si.', nip: '197001012000', fakultas: '', prodi: '', satker: 'Rektorat UTS', jabatan: 'Rektor UTS', role: 'rektor', jatahCuti: 12, statusAkun: 'Aktif' },
+    
+    // Pejabat Fakultas Teknik
+    { id: 'DEKAN01', username: 'dekan_ft', password: '123', nama: 'Prof. Dr. Ir. Herman, M.Sc.', nip: '197505052008', fakultas: 'Fakultas Teknik', prodi: '', satker: '', jabatan: 'Dekan Fakultas Teknik', role: 'dekan', jatahCuti: 12, statusAkun: 'Aktif' },
+    { id: 'KAPRODI01', username: 'kaprodi_tif', password: '123', nama: 'Andi Wijaya, M.T.', nip: '198001012015', fakultas: 'Fakultas Teknik', prodi: 'S1 Teknik Informatika', satker: '', jabatan: 'Kaprodi S1 Teknik Informatika', role: 'kaprodi', jatahCuti: 12, statusAkun: 'Aktif' },
+    { id: 'PGW001', username: 'dosen1', password: '123', nama: 'Dr. Ahmad Dahlan, M.T.', nip: '198501012010', fakultas: 'Fakultas Teknik', prodi: 'S1 Teknik Informatika', satker: '', jabatan: 'Dosen Informatika', role: 'dosen', jatahCuti: 10, statusAkun: 'Aktif' },
+    
+    // Pejabat Fakultas Hukum
+    { id: 'DEKAN02', username: 'dekan_fh', password: '123', nama: 'Dr. Budi Santoso, S.H., M.H.', nip: '197802022005', fakultas: 'Fakultas Hukum', prodi: '', satker: '', jabatan: 'Dekan Fakultas Hukum', role: 'dekan', jatahCuti: 12, statusAkun: 'Aktif' },
+    { id: 'KAPRODI02', username: 'kaprodi_hukum', password: '123', nama: 'Siti Aminah, S.H., M.H.', nip: '198203032012', fakultas: 'Fakultas Hukum', prodi: 'S1 Ilmu Hukum', satker: '', jabatan: 'Kaprodi S1 Ilmu Hukum', role: 'kaprodi', jatahCuti: 12, statusAkun: 'Aktif' },
+    { id: 'PGW002', username: 'dosen_hukum', password: '123', nama: 'Rahmat Hidayat, S.H., M.H.', nip: '198904042016', fakultas: 'Fakultas Hukum', prodi: 'S1 Ilmu Hukum', satker: '', jabatan: 'Dosen Hukum', role: 'dosen', jatahCuti: 12, statusAkun: 'Aktif' },
+    
+    // Tendik & Kepala Unit
+    { id: 'DIR01', username: 'kepalaunit', password: '123', nama: 'Hendra, S.E., M.M.', nip: '198203032011', fakultas: '', prodi: '', satker: 'Biro Kepegawaian & SDM', jabatan: 'Kepala Biro SDM / Direktur', role: 'kepala_unit', jatahCuti: 12, statusAkun: 'Aktif' },
+    { id: 'PGW003', username: 'tendik1', password: '123', nama: 'Siti Rahma, S.Kom.', nip: '198802022012', fakultas: 'Fakultas Teknik', prodi: 'S1 Teknik Informatika', satker: '', jabatan: 'Staf TU Fakultas Teknik', role: 'tendik_fakultas', jatahCuti: 9, statusAkun: 'Aktif' }
   ]);
 
   // State Form Registrasi Mandiri Pegawai
   const [regForm, setRegForm] = useState({
     nama: '',
     nip: '',
+    fakultas: 'Fakultas Teknik',
+    prodi: 'S1 Teknik Informatika',
+    satker: '',
     role: 'dosen',
     username: '',
     password: ''
@@ -84,7 +97,10 @@ function App() {
     nama: '',
     nip: '',
     jabatan: '',
-    departemen: 'Fakultas Teknik',
+    kategoriUnit: 'Fakultas',
+    fakultas: 'Fakultas Teknik',
+    prodi: 'S1 Teknik Informatika',
+    satker: 'Biro Kepegawaian & SDM',
     role: 'dosen',
     jatahCuti: 12
   });
@@ -99,7 +115,7 @@ function App() {
     fileDataUrl: ''
   });
 
-  // State Form Cuti (Tanpa Upload File)
+  // State Form Cuti
   const [formCuti, setFormCuti] = useState({
     jenisCuti: 'Cuti Tahunan',
     tanggalMulai: '',
@@ -107,11 +123,15 @@ function App() {
     keterangan: ''
   });
 
+  // State Filter khusus Rektor
+  const [filterRektorKategori, setFilterRektorKategori] = useState('Semua');
+  const [filterRektorNilai, setFilterRektorNilai] = useState('');
+
   // Master List Seluruh Pengajuan
   const [riwayatIzin, setRiwayatIzin] = useState([
-    { id: 1, kategori: 'Cuti', nama: 'Dr. Ahmad Dahlan, M.T.', nip: '198501012010', jabatan: 'Dosen Informatika', rolePemohon: 'dosen', jenis: 'Cuti Tahunan', tglMulai: '2026-10-14', tglSelesai: '2026-10-15', durasi: 2, keterangan: 'Cuti ke Mataram', namaFile: '-', fileDataUrl: '', status: 'Disetujui oleh Kaprodi Informatika' },
-    { id: 2, kategori: 'Izin', nama: 'Dr. Ahmad Dahlan, M.T.', nip: '198501012010', jabatan: 'Dosen Informatika', rolePemohon: 'dosen', jenis: 'Sakit', tglMulai: '2026-10-15', tglSelesai: '2026-10-16', durasi: 2, keterangan: 'Demam dan istirahat dokter', namaFile: 'Surat_Keterangan_Dokter.pdf', fileDataUrl: '#', status: 'Menunggu Persetujuan Kaprodi' },
-    { id: 3, kategori: 'Cuti', nama: 'Siti Rahma, S.Kom.', nip: '198802022012', jabatan: 'Staf TU Fakultas Teknik', rolePemohon: 'tendik_fakultas', jenis: 'Cuti Tahunan', tglMulai: '2026-10-20', tglSelesai: '2026-10-22', durasi: 3, keterangan: 'Acara keluarga di Mataram', namaFile: '-', fileDataUrl: '', status: 'Disetujui oleh Dekan Fakultas Teknik' }
+    { id: 1, kategori: 'Cuti', nama: 'Dr. Ahmad Dahlan, M.T.', nip: '198501012010', fakultas: 'Fakultas Teknik', prodi: 'S1 Teknik Informatika', satker: '', jabatan: 'Dosen Informatika', rolePemohon: 'dosen', jenis: 'Cuti Tahunan', tglMulai: '2026-10-14', tglSelesai: '2026-10-15', durasi: 2, keterangan: 'Cuti ke Mataram', namaFile: '-', fileDataUrl: '', status: 'Disetujui oleh Kaprodi S1 Teknik Informatika' },
+    { id: 2, kategori: 'Izin', nama: 'Rahmat Hidayat, S.H., M.H.', nip: '198904042016', fakultas: 'Fakultas Hukum', prodi: 'S1 Ilmu Hukum', satker: '', jabatan: 'Dosen Hukum', rolePemohon: 'dosen', jenis: 'Sakit', tglMulai: '2026-10-15', tglSelesai: '2026-10-16', durasi: 2, keterangan: 'Demam dan istirahat dokter', namaFile: 'Surat_Keterangan_Dokter.pdf', fileDataUrl: '#', status: 'Menunggu Persetujuan Kaprodi' },
+    { id: 3, kategori: 'Cuti', nama: 'Siti Rahma, S.Kom.', nip: '198802022012', fakultas: 'Fakultas Teknik', prodi: 'S1 Teknik Informatika', satker: '', jabatan: 'Staf TU Fakultas Teknik', rolePemohon: 'tendik_fakultas', jenis: 'Cuti Tahunan', tglMulai: '2026-10-20', tglSelesai: '2026-10-22', durasi: 3, keterangan: 'Acara keluarga di Mataram', namaFile: '-', fileDataUrl: '', status: 'Disetujui oleh Dekan Fakultas Teknik' }
   ]);
 
   // Utility Hitung Durasi Hari
@@ -145,23 +165,62 @@ function App() {
     }
   };
 
-  const isApproverRole = ['kaprodi', 'dekan', 'kepala_unit', 'rektor'].includes(currentUser?.role);
+  const isApproverRole = ['kaprodi', 'dekan', 'kepala_unit'].includes(currentUser?.role);
 
+  // Filter Persetujuan Masuk khusus per Prodi / Fakultas Pemohon
   const getPendingForCurrentUser = () => {
     if (!currentUser) return [];
+
     if (currentUser.role === 'kaprodi') {
-      return riwayatIzin.filter(i => i.status === 'Menunggu Persetujuan Kaprodi');
+      return riwayatIzin.filter(i => 
+        i.status === 'Menunggu Persetujuan Kaprodi' && 
+        i.prodi === currentUser.prodi
+      );
     }
+
     if (currentUser.role === 'dekan') {
-      return riwayatIzin.filter(i => i.status === 'Menunggu Persetujuan Dekan');
+      return riwayatIzin.filter(i => 
+        i.status === 'Menunggu Persetujuan Dekan' && 
+        i.fakultas === currentUser.fakultas
+      );
     }
+
     if (currentUser.role === 'kepala_unit') {
-      return riwayatIzin.filter(i => i.status === 'Menunggu Persetujuan Kepala Unit');
+      return riwayatIzin.filter(i => 
+        i.status === 'Menunggu Persetujuan Kepala Unit' &&
+        i.satker === currentUser.satker
+      );
     }
-    if (currentUser.role === 'rektor') {
-      return riwayatIzin.filter(i => i.status === 'Menunggu Persetujuan Rektor');
-    }
+
     return [];
+  };
+
+  // PERBAIKAN UTAMA: Filter Riwayat & Rekapan Laporan Sesuai Hirarki
+  const getRiwayatForCurrentUser = () => {
+    if (!currentUser) return [];
+
+    // Admin & Rektor dapat melihat seluruh data
+    if (currentUser.role === 'admin' || currentUser.role === 'rektor') {
+      return riwayatIzin;
+    }
+
+    // Dekan hanya melihat data pengajuan yang berada di Fakultas miliknya
+    if (currentUser.role === 'dekan') {
+      return riwayatIzin.filter(i => i.fakultas === currentUser.fakultas);
+    }
+
+    // Kaprodi hanya melihat data pengajuan yang berada di Program Studi miliknya
+    if (currentUser.role === 'kaprodi') {
+      return riwayatIzin.filter(i => i.prodi === currentUser.prodi);
+    }
+
+    // Kepala Unit hanya melihat data pengajuan yang berada di Satker/Biro miliknya
+    if (currentUser.role === 'kepala_unit') {
+      return riwayatIzin.filter(i => i.satker === currentUser.satker);
+    }
+
+    // Dosen / Tendik hanya melihat data pengajuan miliknya sendiri
+    return riwayatIzin.filter(i => i.nip === currentUser.nip);
   };
 
   const handleLogin = (e) => {
@@ -204,7 +263,9 @@ function App() {
       password: regForm.password,
       nama: regForm.nama.trim(),
       nip: regForm.nip.trim(),
-      departemen: 'Belum Diatur',
+      fakultas: regForm.fakultas,
+      prodi: regForm.prodi,
+      satker: regForm.satker,
       jabatan: regForm.role.toUpperCase().replace('_', ' '),
       role: regForm.role,
       jatahCuti: 12,
@@ -213,7 +274,7 @@ function App() {
 
     setDaftarPegawai([...daftarPegawai, pegawaiBaru]);
     alert('Pendaftaran berhasil! Akun Anda sedang menunggu persetujuan (approval) dari Admin Sistem.');
-    setRegForm({ nama: '', nip: '', role: 'dosen', username: '', password: '' });
+    setRegForm({ nama: '', nip: '', fakultas: 'Fakultas Teknik', prodi: 'S1 Teknik Informatika', satker: '', role: 'dosen', username: '', password: '' });
     setIsRegisterMode(false);
   };
 
@@ -235,22 +296,59 @@ function App() {
 
   const handleSavePegawai = (e) => {
     e.preventDefault();
+    const isFakultas = formPegawai.kategoriUnit === 'Fakultas';
+    
+    let updatedRole = formPegawai.role;
+    let autoJabatan = formPegawai.jabatan;
+
+    if (updatedRole === 'kaprodi') {
+      autoJabatan = `Kaprodi ${formPegawai.prodi}`;
+    } else if (updatedRole === 'dekan') {
+      autoJabatan = `Dekan ${formPegawai.fakultas}`;
+    }
+
     const pegawaiBaru = {
       ...formPegawai,
       id: formPegawai.id || `PGW00${daftarPegawai.length + 1}`,
       username: formPegawai.id ? formPegawai.id.toLowerCase() : `pgw00${daftarPegawai.length + 1}`,
       password: '123',
+      fakultas: isFakultas ? formPegawai.fakultas : '',
+      prodi: isFakultas ? formPegawai.prodi : '',
+      satker: !isFakultas ? formPegawai.satker : '',
+      jabatan: autoJabatan,
+      role: updatedRole,
       jatahCuti: 12,
       statusAkun: 'Aktif'
     };
-    setDaftarPegawai([...daftarPegawai, pegawaiBaru]);
-    alert('Data pegawai UTS berhasil ditambahkan!');
-    setFormPegawai({ id: '', nama: '', nip: '', jabatan: '', departemen: daftarFakultas[0]?.nama || 'Fakultas Teknik', role: 'dosen', jatahCuti: 12 });
+
+    const existingIndex = daftarPegawai.findIndex(p => p.id === pegawaiBaru.id);
+    if (existingIndex >= 0) {
+      const updatedList = [...daftarPegawai];
+      updatedList[existingIndex] = pegawaiBaru;
+      setDaftarPegawai(updatedList);
+      alert('Data dan Jabatan Pegawai berhasil diperbarui!');
+    } else {
+      setDaftarPegawai([...daftarPegawai, pegawaiBaru]);
+      alert('Data pegawai UTS baru berhasil ditambahkan!');
+    }
+
+    setFormPegawai({
+      id: '',
+      nama: '',
+      nip: '',
+      jabatan: '',
+      kategoriUnit: 'Fakultas',
+      fakultas: daftarFakultas[0]?.nama || 'Fakultas Teknik',
+      prodi: daftarProdi[0]?.nama || 'S1 Teknik Informatika',
+      satker: daftarSatker[0]?.nama || 'Biro Kepegawaian & SDM',
+      role: 'dosen',
+      jatahCuti: 12
+    });
   };
 
   const handleDeletePegawai = (id) => {
-    if (['ADM01', 'REKTOR01', 'DEKAN01'].includes(id)) {
-      alert('Akun Utama Admin / Pejabat tidak dapat dihapus!');
+    if (['ADM01', 'REKTOR01'].includes(id)) {
+      alert('Akun Utama Admin / Rektor tidak dapat dihapus!');
       return;
     }
     if (window.confirm('Yakin ingin menghapus data pegawai ini?')) {
@@ -258,7 +356,6 @@ function App() {
     }
   };
 
-  // Handler Tambah/Hapus Fakultas, Prodi, Satker
   const handleAddFakultas = (e) => {
     e.preventDefault();
     if (!inputFakultas.trim()) return;
@@ -295,7 +392,6 @@ function App() {
     setDaftarSatker(daftarSatker.filter(s => s.id !== id));
   };
 
-  // Handler Tambah/Hapus Master Jenis Izin & Cuti oleh Admin
   const handleAddJenisIzin = (e) => {
     e.preventDefault();
     if (!inputJenisIzin.trim()) return;
@@ -336,6 +432,7 @@ function App() {
   };
 
   const handleExportExcel = () => {
+    const listToExport = getRiwayatForCurrentUser();
     let tableHTML = `
       <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
       <head><meta charset="utf-8"/></head>
@@ -348,8 +445,10 @@ function App() {
               <th>Kategori</th>
               <th>Nama Pemohon</th>
               <th>NIP</th>
-              <th>Jabatan / Unit</th>
-              <th>Sisa Cuti Pegawai saat ini</th>
+              <th>Fakultas / Satker</th>
+              <th>Prodi</th>
+              <th>Jabatan</th>
+              <th>Sisa Cuti saat ini</th>
               <th>Jenis</th>
               <th>Tanggal Mulai</th>
               <th>Tanggal Selesai</th>
@@ -362,7 +461,7 @@ function App() {
           <tbody>
     `;
 
-    riwayatIzin.forEach((item, index) => {
+    listToExport.forEach((item, index) => {
       const sisaCuti = getSisaCutiByNip(item.nip);
       tableHTML += `
         <tr>
@@ -370,6 +469,8 @@ function App() {
           <td>${item.kategori}</td>
           <td>${item.nama}</td>
           <td>${item.nip}</td>
+          <td>${item.fakultas || item.satker || '-'}</td>
+          <td>${item.prodi || '-'}</td>
           <td>${item.jabatan || item.rolePemohon}</td>
           <td>${sisaCuti} Hari Tersisa (dari 12)</td>
           <td>${item.jenis}</td>
@@ -406,6 +507,9 @@ function App() {
       kategori: 'Izin',
       nama: currentUser.nama,
       nip: currentUser.nip,
+      fakultas: currentUser.fakultas || '',
+      prodi: currentUser.prodi || '',
+      satker: currentUser.satker || '',
       jabatan: currentUser.jabatan,
       rolePemohon: currentUser.role,
       jenis: formIzin.jenisIzin,
@@ -445,6 +549,9 @@ function App() {
       kategori: 'Cuti',
       nama: currentUser.nama,
       nip: currentUser.nip,
+      fakultas: currentUser.fakultas || '',
+      prodi: currentUser.prodi || '',
+      satker: currentUser.satker || '',
       jabatan: currentUser.jabatan,
       rolePemohon: currentUser.role,
       jenis: formCuti.jenisCuti,
@@ -523,6 +630,22 @@ function App() {
   const handleMenuClick = (menu) => {
     setActiveMenu(menu);
     setIsSidebarOpen(false);
+  };
+
+  const getRiwayatFilteredForRektor = () => {
+    if (filterRektorKategori === 'Semua' || !filterRektorNilai) {
+      return riwayatIzin;
+    }
+    if (filterRektorKategori === 'Fakultas') {
+      return riwayatIzin.filter(r => r.fakultas === filterRektorNilai);
+    }
+    if (filterRektorKategori === 'Prodi') {
+      return riwayatIzin.filter(r => r.prodi === filterRektorNilai);
+    }
+    if (filterRektorKategori === 'Satker') {
+      return riwayatIzin.filter(r => r.satker === filterRektorNilai);
+    }
+    return riwayatIzin;
   };
 
   // ================= HALAMAN LOGIN & REGISTRASI =================
@@ -646,6 +769,22 @@ function App() {
                 />
               </div>
               <div className="form-group">
+                <label className="form-label">Fakultas Tempat Bertugas</label>
+                <select value={regForm.fakultas} onChange={(e) => setRegForm({...regForm, fakultas: e.target.value})} className="form-input">
+                  {daftarFakultas.map(f => (
+                    <option key={f.id} value={f.nama}>{f.nama}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Program Studi</label>
+                <select value={regForm.prodi} onChange={(e) => setRegForm({...regForm, prodi: e.target.value})} className="form-input">
+                  {daftarProdi.filter(p => p.fakultas === regForm.fakultas).map(p => (
+                    <option key={p.id} value={p.nama}>{p.nama}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
                 <label className="form-label">Kategori / Jabatan Pegawai</label>
                 <select 
                   value={regForm.role} 
@@ -653,10 +792,7 @@ function App() {
                   className="form-input"
                 >
                   <option value="dosen">Dosen (Persetujuan Kaprodi)</option>
-                  <option value="kaprodi">Kaprodi (Persetujuan Dekan)</option>
                   <option value="tendik_fakultas">Tendik Fakultas (Persetujuan Dekan)</option>
-                  <option value="dekan">Dekan (Persetujuan Rektor)</option>
-                  <option value="tendik_rektorat">Tendik Rektorat (Persetujuan Kepala Unit)</option>
                 </select>
               </div>
               <div className="form-group">
@@ -703,8 +839,9 @@ function App() {
 
           <div style={{ marginTop: '15px', padding: '10px', backgroundColor: 'rgba(241, 245, 249, 0.8)', borderRadius: '6px', fontSize: '11px', color: '#475569', lineHeight: '1.4' }}>
             <b>Akun Demo Simulasi (Pass: 123):</b><br/>
-            - Dosen: <code>dosen1</code> | Kaprodi: <code>kaprodi</code> | Dekan: <code>dekan</code><br/>
-            - Tendik Rektorat: <code>tendik2</code> | Ka. Unit: <code>kepalaunit</code> | Rektor: <code>rektor</code> | Admin: <code>admin</code>
+            - Dosen Teknik: <code>dosen1</code> | Kaprodi TIF: <code>kaprodi_tif</code> | Dekan FT: <code>dekan_ft</code><br/>
+            - Dosen Hukum: <code>dosen_hukum</code> | Kaprodi Hukum: <code>kaprodi_hukum</code> | Dekan FH: <code>dekan_fh</code><br/>
+            - Rektor: <code>rektor</code> | Admin: <code>admin</code>
           </div>
         </div>
       </div>
@@ -727,7 +864,7 @@ function App() {
             <i className="fa-solid fa-chart-line icon-menu"></i> Dashboard
           </li>
 
-          {currentUser.role !== 'admin' && (
+          {currentUser.role !== 'admin' && currentUser.role !== 'rektor' && (
             <>
               <li className={activeMenu === 'ajukan-izin' ? 'menu-item menu-active' : 'menu-item'} onClick={() => handleMenuClick('ajukan-izin')}>
                 <i className="fa-solid fa-file-pen icon-menu"></i> Form Permohonan Izin
@@ -826,7 +963,135 @@ function App() {
                 </div>
               </div>
 
-              {currentUser.role !== 'admin' && (
+              {currentUser.role === 'rektor' && (
+                <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', marginTop: '20px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+                  <div style={{ borderBottom: '2px solid #0284c7', paddingBottom: '12px', marginBottom: '15px' }}>
+                    <h3 style={{ margin: 0, color: '#1e293b' }}>
+                      <i className="fa-solid fa-eye" style={{ color: '#0284c7', marginRight: '8px' }}></i>
+                      Pantauan Aktivitas Izin & Cuti Seluruh Dosen dan Karyawan (Khusus Rektor)
+                    </h3>
+                    <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0 0' }}>
+                      Filter berdasarkan Fakultas, Program Studi, atau Satuan Kerja untuk memantau rekap data secara spesifik.
+                    </p>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '20px', backgroundColor: '#f8fafc', padding: '12px', borderRadius: '8px' }}>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px', color: '#475569' }}>Kategori Filter:</label>
+                      <select 
+                        value={filterRektorKategori} 
+                        onChange={(e) => {
+                          setFilterRektorKategori(e.target.value);
+                          setFilterRektorNilai('');
+                        }} 
+                        className="form-input" 
+                        style={{ padding: '6px 12px', fontSize: '13px' }}
+                      >
+                        <option value="Semua">Tampilkan Semua Unit</option>
+                        <option value="Fakultas">Filter per Fakultas</option>
+                        <option value="Prodi">Filter per Program Studi</option>
+                        <option value="Satker">Filter per Satuan Kerja / Biro</option>
+                      </select>
+                    </div>
+
+                    {filterRektorKategori === 'Fakultas' && (
+                      <div>
+                        <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px', color: '#475569' }}>Pilih Fakultas:</label>
+                        <select value={filterRektorNilai} onChange={(e) => setFilterRektorNilai(e.target.value)} className="form-input" style={{ padding: '6px 12px', fontSize: '13px' }}>
+                          <option value="">-- Semua Fakultas --</option>
+                          {daftarFakultas.map(f => (
+                            <option key={f.id} value={f.nama}>{f.nama}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {filterRektorKategori === 'Prodi' && (
+                      <div>
+                        <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px', color: '#475569' }}>Pilih Program Studi:</label>
+                        <select value={filterRektorNilai} onChange={(e) => setFilterRektorNilai(e.target.value)} className="form-input" style={{ padding: '6px 12px', fontSize: '13px' }}>
+                          <option value="">-- Semua Program Studi --</option>
+                          {daftarProdi.map(p => (
+                            <option key={p.id} value={p.nama}>{p.nama} ({p.fakultas})</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {filterRektorKategori === 'Satker' && (
+                      <div>
+                        <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px', color: '#475569' }}>Pilih Satuan Kerja:</label>
+                        <select value={filterRektorNilai} onChange={(e) => setFilterRektorNilai(e.target.value)} className="form-input" style={{ padding: '6px 12px', fontSize: '13px' }}>
+                          <option value="">-- Semua Satker / Biro --</option>
+                          {daftarSatker.map(s => (
+                            <option key={s.id} value={s.nama}>{s.nama}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ overflowX: 'auto' }}>
+                    <table className="table-style">
+                      <thead>
+                        <tr className="th-tr">
+                          <th className="th-cell">Kategori</th>
+                          <th className="th-cell">Nama Pemohon & Jabatan</th>
+                          <th className="th-cell">Unit / Fakultas / Prodi</th>
+                          <th className="th-cell">Jenis & Tanggal</th>
+                          <th className="th-cell">Durasi</th>
+                          <th className="th-cell">Keterangan</th>
+                          <th className="th-cell">Status Persetujuan</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {getRiwayatFilteredForRektor().length > 0 ? (
+                          getRiwayatFilteredForRektor().map((item) => (
+                            <tr key={item.id} className="td-tr">
+                              <td className="td-cell">
+                                <span style={{
+                                  padding: '3px 8px',
+                                  borderRadius: '4px',
+                                  fontSize: '11px',
+                                  fontWeight: 'bold',
+                                  backgroundColor: item.kategori === 'Cuti' ? '#e0f2fe' : '#fef3c7',
+                                  color: item.kategori === 'Cuti' ? '#0369a1' : '#b45309'
+                                }}>
+                                  {item.kategori}
+                                </span>
+                              </td>
+                              <td className="td-cell">
+                                <b>{item.nama}</b><br/>
+                                <small style={{ color: '#64748b' }}>NIP: {item.nip}</small>
+                              </td>
+                              <td className="td-cell">
+                                <b>{item.fakultas || item.satker || '-'}</b><br/>
+                                <small style={{ color: '#0284c7' }}>{item.prodi || '-'}</small>
+                              </td>
+                              <td className="td-cell"><b>{item.jenis}</b><br/><small>{item.tglMulai} s/d {item.tglSelesai}</small></td>
+                              <td className="td-cell">{item.durasi} Hari</td>
+                              <td className="td-cell">{item.keterangan}</td>
+                              <td className="td-cell">
+                                <span className={item.status.includes('Disetujui') ? 'badge-success' : 'badge'}>
+                                  {item.status}
+                                </span>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan="7" style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>
+                              Tidak ada riwayat pengajuan pada bagian ini.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {currentUser.role !== 'admin' && currentUser.role !== 'rektor' && (
                 <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', marginTop: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '5px solid #0284c7' }}>
                   <div>
                     <h3 style={{ margin: 0, fontSize: '16px', color: '#1e293b' }}>
@@ -861,21 +1126,21 @@ function App() {
                         <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
                           <th style={{ padding: '10px' }}>NIP / ID</th>
                           <th style={{ padding: '10px' }}>Nama Pegawai</th>
-                          <th style={{ padding: '10px' }}>Jabatan / Unit</th>
-                          <th style={{ padding: '10px', textAlign: 'center' }}>Kuota Awal</th>
+                          <th style={{ padding: '10px' }}>Fakultas / Satker</th>
+                          <th style={{ padding: '10px' }}>Prodi</th>
                           <th style={{ padding: '10px', textAlign: 'center' }}>Terpakai</th>
                           <th style={{ padding: '10px', textAlign: 'center' }}>Sisa Jatah Cuti</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {daftarPegawai.filter(p => p.role !== 'admin').map((pgw) => {
+                        {daftarPegawai.filter(p => p.role !== 'admin' && p.role !== 'rektor').map((pgw) => {
                           const terpakai = 12 - pgw.jatahCuti;
                           return (
                             <tr key={pgw.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                               <td style={{ padding: '10px', fontWeight: 'bold' }}>{pgw.nip}</td>
-                              <td style={{ padding: '10px' }}>{pgw.nama}</td>
-                              <td style={{ padding: '10px' }}>{pgw.jabatan}</td>
-                              <td style={{ padding: '10px', textAlign: 'center' }}>12 Hari</td>
+                              <td style={{ padding: '10px' }}>{pgw.nama}<br/><small style={{color:'#64748b'}}>{pgw.jabatan}</small></td>
+                              <td style={{ padding: '10px' }}>{pgw.fakultas || pgw.satker || '-'}</td>
+                              <td style={{ padding: '10px' }}>{pgw.prodi || '-'}</td>
                               <td style={{ padding: '10px', textAlign: 'center', color: terpakai > 0 ? '#dc2626' : '#64748b' }}>{terpakai} Hari</td>
                               <td style={{ padding: '10px', textAlign: 'center' }}>
                                 <span style={{ padding: '4px 10px', borderRadius: '12px', backgroundColor: pgw.jatahCuti > 3 ? '#dcfce7' : '#fee2e2', color: pgw.jatahCuti > 3 ? '#15803d' : '#991b1b', fontWeight: 'bold' }}>
@@ -894,7 +1159,7 @@ function App() {
           )}
 
           {/* FORM PENGAJUAN IZIN */}
-          {activeMenu === 'ajukan-izin' && (
+          {activeMenu === 'ajukan-izin' && currentUser.role !== 'rektor' && (
             <div className="form-container" style={{ maxWidth: '600px', margin: '0 auto' }}>
               <div style={{ borderBottom: '2px solid #f59e0b', paddingBottom: '10px', marginBottom: '15px' }}>
                 <h3 style={{ margin: 0, color: '#1e293b' }}><i className="fa-solid fa-file-pen" style={{ color: '#f59e0b', marginRight: '8px' }}></i>Formulir Permohonan Izin</h3>
@@ -957,7 +1222,7 @@ function App() {
           )}
 
           {/* FORM PENGAJUAN CUTI */}
-          {activeMenu === 'ajukan-cuti' && (
+          {activeMenu === 'ajukan-cuti' && currentUser.role !== 'rektor' && (
             <div className="form-container" style={{ maxWidth: '600px', margin: '0 auto' }}>
               <div style={{ borderBottom: '2px solid #0284c7', paddingBottom: '10px', marginBottom: '15px' }}>
                 <h3 style={{ margin: 0, color: '#1e293b' }}><i className="fa-solid fa-umbrella-beach" style={{ color: '#0284c7', marginRight: '8px' }}></i>Formulir Permohonan Cuti</h3>
@@ -1018,22 +1283,24 @@ function App() {
             </div>
           )}
 
-          {/* PERSETUJUAN MASUK (KHUSUS ATASAN) */}
+          {/* PERSETUJUAN MASUK */}
           {activeMenu === 'persetujuan' && isApproverRole && (
             <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', overflowX: 'auto' }}>
               <h3>Daftar Permohonan Masuk untuk {currentUser.jabatan}</h3>
               <p style={{ fontSize: '13px', color: '#666', marginBottom: '15px' }}>
-                Hanya menampilkan permohonan yang ditujukan kepada Anda selaku {currentUser.jabatan}.
+                {currentUser.role === 'kaprodi' && `Menampilkan pengajuan khusus dari Dosen di ${currentUser.prodi}.`}
+                {currentUser.role === 'dekan' && `Menampilkan pengajuan khusus dari Kaprodi/Tendik di ${currentUser.fakultas}.`}
+                {currentUser.role === 'kepala_unit' && `Menampilkan pengajuan khusus dari Tendik di ${currentUser.satker}.`}
               </p>
               <table className="table-style">
                 <thead>
                   <tr className="th-tr">
                     <th className="th-cell">Kategori</th>
                     <th className="th-cell">Nama Pemohon</th>
+                    <th className="th-cell">Prodi / Fakultas</th>
                     <th className="th-cell">Jenis & Tanggal</th>
                     <th className="th-cell">Durasi</th>
                     <th className="th-cell">Keterangan & Lampiran</th>
-                    <th className="th-cell">Status Saat Ini</th>
                     <th className="th-cell">Aksi Keputusan</th>
                   </tr>
                 </thead>
@@ -1054,6 +1321,7 @@ function App() {
                           </span>
                         </td>
                         <td className="td-cell"><b>{item.nama}</b><br/><small style={{color:'#666'}}>{item.nip}</small></td>
+                        <td className="td-cell"><b>{item.prodi || '-'}</b><br/><small>{item.fakultas || item.satker}</small></td>
                         <td className="td-cell"><b>{item.jenis}</b><br/><small>{item.tglMulai} s/d {item.tglSelesai}</small></td>
                         <td className="td-cell">{item.durasi} Hari</td>
                         <td className="td-cell">
@@ -1063,9 +1331,6 @@ function App() {
                               <i className="fa-solid fa-paperclip"></i> {item.namaFile}
                             </small>
                           )}
-                        </td>
-                        <td className="td-cell">
-                          <span className="badge">{item.status}</span>
                         </td>
                         <td className="td-cell">
                           <div style={{ display: 'flex', gap: '5px' }}>
@@ -1082,7 +1347,7 @@ function App() {
                   ) : (
                     <tr>
                       <td colSpan="7" style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>
-                        Tidak ada permohonan baru yang menunggu persetujuan Anda saat ini.
+                        Tidak ada permohonan baru dari unit/prodi Anda yang menunggu persetujuan saat ini.
                       </td>
                     </tr>
                   )}
@@ -1091,10 +1356,9 @@ function App() {
             </div>
           )}
 
-          {/* MANAJEMEN UNIT, FAKULTAS, PRODI & JENIS IZIN/CUTI (KHUSUS ADMIN) */}
+          {/* MANAJEMEN UNIT, FAKULTAS, PRODI & JENIS IZIN/CUTI (ADMIN) */}
           {activeMenu === 'master-unit' && currentUser.role === 'admin' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
-              {/* Bagian 1: Jenis Izin & Cuti */}
               <div style={{ borderBottom: '2px solid #cbd5e1', paddingBottom: '15px' }}>
                 <h3 style={{ color: '#1e293b', marginBottom: '5px' }}>
                   <i className="fa-solid fa-sliders" style={{ color: '#0284c7', marginRight: '8px' }}></i>
@@ -1106,7 +1370,6 @@ function App() {
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-                {/* Form Input Jenis Izin */}
                 <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderTop: '4px solid #f59e0b' }}>
                   <h4 style={{ color: '#1e293b', marginBottom: '15px' }}><i className="fa-solid fa-file-signature" style={{ color: '#f59e0b', marginRight: '8px' }}></i>Master Jenis Izin</h4>
                   <form onSubmit={handleAddJenisIzin} style={{ marginBottom: '15px', display: 'flex', gap: '8px' }}>
@@ -1130,7 +1393,6 @@ function App() {
                   </ul>
                 </div>
 
-                {/* Form Input Jenis Cuti */}
                 <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderTop: '4px solid #0284c7' }}>
                   <h4 style={{ color: '#1e293b', marginBottom: '15px' }}><i className="fa-solid fa-umbrella-beach" style={{ color: '#0284c7', marginRight: '8px' }}></i>Master Jenis Cuti</h4>
                   <form onSubmit={handleAddJenisCuti} style={{ marginBottom: '15px', display: 'flex', gap: '8px' }}>
@@ -1155,7 +1417,6 @@ function App() {
                 </div>
               </div>
 
-              {/* Bagian 2: Fakultas, Prodi & Satker */}
               <div style={{ borderBottom: '2px solid #cbd5e1', paddingBottom: '15px', marginTop: '15px' }}>
                 <h3 style={{ color: '#1e293b', marginBottom: '5px' }}>
                   <i className="fa-solid fa-building-columns" style={{ color: '#059669', marginRight: '8px' }}></i>
@@ -1167,7 +1428,6 @@ function App() {
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-                {/* Box Fakultas */}
                 <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                   <h4 style={{ color: '#1e293b', marginBottom: '15px' }}><i className="fa-solid fa-building" style={{ color: '#0284c7', marginRight: '8px' }}></i>Fakultas</h4>
                   <form onSubmit={handleAddFakultas} style={{ marginBottom: '15px', display: 'flex', gap: '8px' }}>
@@ -1191,7 +1451,6 @@ function App() {
                   </ul>
                 </div>
 
-                {/* Box Program Studi */}
                 <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                   <h4 style={{ color: '#1e293b', marginBottom: '15px' }}><i className="fa-solid fa-graduation-cap" style={{ color: '#f59e0b', marginRight: '8px' }}></i>Program Studi</h4>
                   <form onSubmit={handleAddProdi} style={{ marginBottom: '15px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -1224,7 +1483,6 @@ function App() {
                   </ul>
                 </div>
 
-                {/* Box Satuan Kerja / Biro */}
                 <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                   <h4 style={{ color: '#1e293b', marginBottom: '15px' }}><i className="fa-solid fa-sitemap" style={{ color: '#059669', marginRight: '8px' }}></i>Satuan Kerja / Biro</h4>
                   <form onSubmit={handleAddSatker} style={{ marginBottom: '15px', display: 'flex', gap: '8px' }}>
@@ -1254,68 +1512,113 @@ function App() {
           {/* MASTER DATA PEGAWAI (ADMIN) */}
           {activeMenu === 'master-pegawai' && currentUser.role === 'admin' && (
             <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-              <div className="form-container" style={{ flex: 1, minWidth: '280px' }}>
-                <h3>Tambah / Edit Pegawai UTS</h3>
+              <div className="form-container" style={{ flex: 1, minWidth: '300px' }}>
+                <h3>Tambah / Penetapan Jabatan Pegawai</h3>
                 <form onSubmit={handleSavePegawai} className="form-box">
                   <div className="form-group">
-                    <label className="form-label">ID / Login ID</label>
-                    <input type="text" value={formPegawai.id} onChange={(e)=>setFormPegawai({...formPegawai, id:e.target.value})} placeholder="Contoh: PGW003" className="form-input" required />
+                    <label className="form-label">ID / Username Pegawai</label>
+                    <input type="text" value={formPegawai.id} onChange={(e)=>setFormPegawai({...formPegawai, id:e.target.value})} placeholder="Contoh: PGW003 / kaprodi_akuntansi" className="form-input" required />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Nama Lengkap & Gelar</label>
-                    <input type="text" value={formPegawai.nama} onChange={(e)=>setFormPegawai({...formPegawai, nama:e.target.value})} placeholder="Nama..." className="form-input" required />
+                    <input type="text" value={formPegawai.nama} onChange={(e)=>setFormPegawai({...formPegawai, nama:e.target.value})} placeholder="Nama Dosen / Tendik..." className="form-input" required />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">NIP</label>
+                    <label className="form-label">NIP / NIDN</label>
                     <input type="text" value={formPegawai.nip} onChange={(e)=>setFormPegawai({...formPegawai, nip:e.target.value})} placeholder="Nomor Induk Pegawai..." className="form-input" required />
                   </div>
+
                   <div className="form-group">
-                    <label className="form-label">Jabatan Spesifik</label>
-                    <input type="text" value={formPegawai.jabatan} onChange={(e)=>setFormPegawai({...formPegawai, jabatan:e.target.value})} placeholder="Dosen / Staf TU / Kabag..." className="form-input" required />
+                    <label className="form-label">Tipe Penempatan Unit</label>
+                    <select 
+                      value={formPegawai.kategoriUnit} 
+                      onChange={(e) => setFormPegawai({...formPegawai, kategoriUnit: e.target.value})}
+                      className="form-input"
+                    >
+                      <option value="Fakultas">Fakultas & Program Studi</option>
+                      <option value="Satker">Satuan Kerja / Biro Rektorat</option>
+                    </select>
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">Fakultas / Satuan Kerja (Dinamis)</label>
-                    <select value={formPegawai.departemen} onChange={(e)=>setFormPegawai({...formPegawai, departemen:e.target.value})} className="form-input">
-                      <optgroup label="Fakultas">
-                        {daftarFakultas.map(f => (
-                          <option key={f.id} value={f.nama}>{f.nama}</option>
-                        ))}
-                      </optgroup>
-                      <optgroup label="Satuan Kerja / Biro">
+
+                  {formPegawai.kategoriUnit === 'Fakultas' ? (
+                    <>
+                      <div className="form-group">
+                        <label className="form-label">Fakultas</label>
+                        <select 
+                          value={formPegawai.fakultas} 
+                          onChange={(e) => setFormPegawai({...formPegawai, fakultas: e.target.value})} 
+                          className="form-input"
+                        >
+                          {daftarFakultas.map(f => (
+                            <option key={f.id} value={f.nama}>{f.nama}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Program Studi</label>
+                        <select 
+                          value={formPegawai.prodi} 
+                          onChange={(e) => setFormPegawai({...formPegawai, prodi: e.target.value})} 
+                          className="form-input"
+                        >
+                          {daftarProdi.filter(p => p.fakultas === formPegawai.fakultas).map(p => (
+                            <option key={p.id} value={p.nama}>{p.nama}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="form-group">
+                      <label className="form-label">Satuan Kerja / Biro</label>
+                      <select 
+                        value={formPegawai.satker} 
+                        onChange={(e) => setFormPegawai({...formPegawai, satker: e.target.value})} 
+                        className="form-input"
+                      >
                         {daftarSatker.map(s => (
                           <option key={s.id} value={s.nama}>{s.nama}</option>
                         ))}
-                      </optgroup>
-                    </select>
-                  </div>
+                      </select>
+                    </div>
+                  )}
+
                   <div className="form-group">
-                    <label className="form-label">Role Akses & Alur Persetujuan</label>
+                    <label className="form-label">Pilih Jabatan / Role Akses</label>
                     <select value={formPegawai.role} onChange={(e)=>setFormPegawai({...formPegawai, role:e.target.value})} className="form-input">
-                      <option value="dosen">Dosen (Disetujui Kaprodi)</option>
-                      <option value="kaprodi">Kaprodi (Disetujui Dekan)</option>
-                      <option value="dekan">Dekan (Disetujui Rektor)</option>
-                      <option value="tendik_fakultas">Tendik Fakultas (Disetujui Dekan)</option>
-                      <option value="tendik_rektorat">Tendik Rektorat (Disetujui Kepala Unit)</option>
-                      <option value="kepala_unit">Kepala Unit / Direktur Rektorat</option>
+                      <option value="dosen">Dosen Biasa</option>
+                      <option value="kaprodi">Kaprodi (Ketua Program Studi)</option>
+                      <option value="dekan">Dekan Fakultas</option>
+                      <option value="tendik_fakultas">Tendik / Staf TU Fakultas</option>
+                      <option value="tendik_rektorat">Tendik Rektorat / Biro</option>
+                      <option value="kepala_unit">Kepala Unit / Direktur Biro</option>
                       <option value="rektor">Rektor UTS</option>
                       <option value="admin">Admin Sistem</option>
                     </select>
                   </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Teks Jabatan Spesifik (Opsional)</label>
+                    <input type="text" value={formPegawai.jabatan} onChange={(e)=>setFormPegawai({...formPegawai, jabatan:e.target.value})} placeholder="Kosongkan jika ingin otomatis sesuai role..." className="form-input" />
+                  </div>
+
                   <button type="submit" className="btn-primary">
-                    <i className="fa-solid fa-user-plus"></i> Simpan Pegawai
+                    <i className="fa-solid fa-user-check"></i> Simpan / Tetapkan Jabatan
                   </button>
                 </form>
               </div>
 
-              <div style={{ flex: 2, minWidth: '300px', backgroundColor: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflowX: 'auto' }}>
-                <h3>Daftar Pegawai & Approval Akun Baru</h3>
+              <div style={{ flex: 2, minWidth: '320px', backgroundColor: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflowX: 'auto' }}>
+                <h3>Daftar Pegawai & Pejabat Struktural UTS</h3>
+                <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '15px' }}>
+                  Klik tombol <b>Edit / Sertijab</b> untuk memindahkan jabatan Kaprodi atau Dekan ke dosen lain.
+                </p>
                 <table className="table-style">
                   <thead>
                     <tr className="th-tr">
-                      <th className="th-cell">Username / ID</th>
                       <th className="th-cell">Nama & NIP</th>
-                      <th className="th-cell">Jabatan & Unit</th>
-                      <th className="th-cell">Saldo Cuti</th>
+                      <th className="th-cell">Fakultas / Satker</th>
+                      <th className="th-cell">Prodi</th>
+                      <th className="th-cell">Jabatan Aktif</th>
                       <th className="th-cell">Status Akun</th>
                       <th className="th-cell">Aksi Admin</th>
                     </tr>
@@ -1323,11 +1626,23 @@ function App() {
                   <tbody>
                     {daftarPegawai.map((p) => (
                       <tr key={p.id} className="td-tr">
-                        <td className="td-cell"><b>{p.username || p.id}</b></td>
-                        <td className="td-cell">{p.nama}<br/><small style={{color:'#666'}}>{p.nip}</small></td>
-                        <td className="td-cell">{p.jabatan}<br/><small style={{color:'#0284c7'}}>{p.departemen}</small></td>
                         <td className="td-cell">
-                          <span style={{ fontWeight: 'bold', color: '#0284c7' }}>{p.jatahCuti} Hari</span> <small style={{ color: '#64748b' }}>/ 12</small>
+                          <b>{p.nama}</b><br/>
+                          <small style={{color:'#64748b'}}>{p.nip} ({p.username})</small>
+                        </td>
+                        <td className="td-cell">{p.fakultas || p.satker || '-'}</td>
+                        <td className="td-cell">{p.prodi || '-'}</td>
+                        <td className="td-cell">
+                          <span style={{ 
+                            padding: '3px 8px', 
+                            borderRadius: '4px', 
+                            fontSize: '11px', 
+                            fontWeight: 'bold',
+                            backgroundColor: p.role === 'kaprodi' ? '#fef3c7' : p.role === 'dekan' ? '#e0f2fe' : '#f1f5f9',
+                            color: p.role === 'kaprodi' ? '#b45309' : p.role === 'dekan' ? '#0369a1' : '#334155'
+                          }}>
+                            {p.jabatan}
+                          </span>
                         </td>
                         <td className="td-cell">
                           <span style={{
@@ -1343,13 +1658,34 @@ function App() {
                         </td>
                         <td className="td-cell">
                           <div style={{ display: 'flex', gap: '5px' }}>
-                            {p.statusAkun === 'Pending' && (
+                            {p.statusAkun === 'Pending' ? (
                               <button 
                                 onClick={() => handleApprovePegawai(p.id)} 
                                 style={{ ...styles.btnAction, backgroundColor: '#059669' }}
                                 title="Setujui Akun"
                               >
                                 Approve
+                              </button>
+                            ) : (
+                              <button 
+                                onClick={() => {
+                                  setFormPegawai({
+                                    id: p.id,
+                                    nama: p.nama,
+                                    nip: p.nip,
+                                    jabatan: p.jabatan,
+                                    kategoriUnit: p.satker ? 'Satker' : 'Fakultas',
+                                    fakultas: p.fakultas || daftarFakultas[0]?.nama,
+                                    prodi: p.prodi || daftarProdi[0]?.nama,
+                                    satker: p.satker || daftarSatker[0]?.nama,
+                                    role: p.role,
+                                    jatahCuti: p.jatahCuti
+                                  });
+                                }} 
+                                style={{ ...styles.btnAction, backgroundColor: '#0284c7' }}
+                                title="Edit / Sertijab Jabatan"
+                              >
+                                Edit / Sertijab
                               </button>
                             )}
                             {!['ADM01', 'REKTOR01'].includes(p.id) && (
@@ -1367,18 +1703,24 @@ function App() {
             </div>
           )}
 
-          {/* RIWAYAT & REKAPAN */}
+          {/* TABEL RIWAYAT & REKAPAN (SEKARANG SUDAH TERISOLASI KHUSUS PER FAKULTAS / PRODI) */}
           {activeMenu === 'riwayat' && (
             <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', overflowX: 'auto' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
                 <div>
-                  <h3 style={{ margin: 0, color: '#1e293b' }}>Rekapitulasi Permohonan Izin & Cuti Seluruh Pegawai UTS</h3>
+                  <h3 style={{ margin: 0, color: '#1e293b' }}>
+                    Rekapitulasi Permohonan Izin & Cuti
+                    {currentUser.role === 'dekan' && ` (${currentUser.fakultas})`}
+                    {currentUser.role === 'kaprodi' && ` (${currentUser.prodi})`}
+                  </h3>
                   <p style={{ fontSize: '12px', color: '#64748b', margin: '4px 0 0 0' }}>
-                    {currentUser.role === 'admin' ? 'Akses Admin Sistem: Anda dapat melihat sisa jatah cuti pegawai, mengekspor rekap ke Excel, dan memantau status pengajuan.' : 'Menampilkan rekapitulasi riwayat pengajuan.'}
+                    {currentUser.role === 'dekan' && `Menampilkan riwayat seluruh dosen dan staf di lingkungan ${currentUser.fakultas}.`}
+                    {currentUser.role === 'kaprodi' && `Menampilkan riwayat dosen khusus di lingkungan ${currentUser.prodi}.`}
+                    {(currentUser.role === 'admin' || currentUser.role === 'rektor') && 'Akses Pimpinan / Admin: Memantau seluruh riwayat kampus serta ekspor rekap ke format Excel.'}
                   </p>
                 </div>
 
-                {currentUser.role === 'admin' && (
+                {(currentUser.role === 'admin' || currentUser.role === 'rektor' || currentUser.role === 'dekan') && (
                   <button 
                     onClick={handleExportExcel}
                     style={{ backgroundColor: '#059669', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
@@ -1392,19 +1734,19 @@ function App() {
                 <thead>
                   <tr className="th-tr">
                     <th className="th-cell">Kategori</th>
-                    <th className="th-cell">Nama Pemohon & Jabatan</th>
-                    {currentUser.role === 'admin' && <th className="th-cell">Sisa Cuti Pegawai</th>}
+                    <th className="th-cell">Nama Pemohon & NIP</th>
+                    <th className="th-cell">Fakultas / Satker</th>
+                    <th className="th-cell">Prodi</th>
                     <th className="th-cell">Jenis & Tanggal</th>
                     <th className="th-cell">Durasi</th>
                     <th className="th-cell">Keterangan</th>
-                    <th className="th-cell">Dokumen / Lampiran</th>
+                    <th className="th-cell">Dokumen</th>
                     <th className="th-cell">Status Persetujuan</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {riwayatIzin.map((item) => {
-                    const sisaCutiPemohon = getSisaCutiByNip(item.nip);
-                    return (
+                  {getRiwayatForCurrentUser().length > 0 ? (
+                    getRiwayatForCurrentUser().map((item) => (
                       <tr key={item.id} className="td-tr">
                         <td className="td-cell">
                           <span style={{
@@ -1423,23 +1765,8 @@ function App() {
                           <small style={{ color: '#475569' }}>{item.jabatan || item.rolePemohon}</small><br/>
                           <small style={{ color: '#94a3b8' }}>NIP: {item.nip}</small>
                         </td>
-
-                        {currentUser.role === 'admin' && (
-                          <td className="td-cell">
-                            <span style={{ 
-                              padding: '3px 8px', 
-                              borderRadius: '12px', 
-                              fontSize: '12px', 
-                              fontWeight: 'bold',
-                              backgroundColor: '#e0f2fe',
-                              color: '#0369a1',
-                              display: 'inline-block'
-                            }}>
-                              {sisaCutiPemohon} / 12 Hari
-                            </span>
-                          </td>
-                        )}
-
+                        <td className="td-cell">{item.fakultas || item.satker || '-'}</td>
+                        <td className="td-cell">{item.prodi || '-'}</td>
                         <td className="td-cell"><b>{item.jenis}</b><br/><small>{item.tglMulai} s/d {item.tglSelesai}</small></td>
                         <td className="td-cell">{item.durasi} Hari</td>
                         <td className="td-cell">{item.keterangan}</td>
@@ -1465,8 +1792,14 @@ function App() {
                           </span>
                         </td>
                       </tr>
-                    );
-                  })}
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="9" style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>
+                        Tidak ada data riwayat permohonan pada unit/fakultas Anda saat ini.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
