@@ -31,25 +31,49 @@ function App() {
   const [daftarSatker, setDaftarSatker] = useState([]);
   const [daftarJenisIzin, setDaftarJenisIzin] = useState([]);
   const [daftarJenisCuti, setDaftarJenisCuti] = useState([]);
+  const [daftarJabatan, setDaftarJabatan] = useState([]); 
   const [daftarPegawai, setDaftarPegawai] = useState([]);
   const [riwayatIzin, setRiwayatIzin] = useState([]);
 
-  // State Input Form Admin
+  // Default fallback jabatan jika database masterJabatan kosong
+  const defaultJabatanList = [
+    { docId: 'def-1', nama: 'Rektor' },
+    { docId: 'def-2', nama: 'Warek I' },
+    { docId: 'def-3', nama: 'Warek II' },
+    { docId: 'def-4', nama: 'Warek III' },
+    { docId: 'def-5', nama: 'Warek IV' },
+    { docId: 'def-6', nama: 'Kepala BPMU' },
+    { docId: 'def-7', nama: 'Kepala BPKO' },
+    { docId: 'def-8', nama: 'Dekan' },
+    { docId: 'def-9', nama: 'Wakil Dekan' },
+    { docId: 'def-10', nama: 'Direktur Pasca Sarjana' },
+    { docId: 'def-11', nama: 'Kaprodi' },
+    { docId: 'def-12', nama: 'Sekretaris Prodi' },
+    { docId: 'def-13', nama: 'Direktur' },
+    { docId: 'def-14', nama: 'Kasub Direktur' }
+  ];
+
+  const activeJabatanList = daftarJabatan.length > 0 ? daftarJabatan : defaultJabatanList;
+
+  // State Input Form Admin Master Unit
   const [inputFakultas, setInputFakultas] = useState('');
   const [inputProdi, setInputProdi] = useState('');
   const [pilihFakultasProdi, setPilihFakultasProdi] = useState('Fakultas Teknik');
   const [inputSatker, setInputSatker] = useState('');
   const [inputJenisIzin, setInputJenisIzin] = useState('');
   const [inputJenisCuti, setInputJenisCuti] = useState('');
+  const [inputJabatanMaster, setInputJabatanMaster] = useState('');
 
-  // State Form Registrasi Mandiri Pegawai (Dengan opsi lengkap)
+  // State Form Registrasi Mandiri Pegawai (Kategori/Role ditaruh paling atas)
   const [regForm, setRegForm] = useState({
     nama: '',
     nip: '',
+    role: 'dosen',
+    subJabatanDT: 'Rektor',
+    subLingkupTendikPenunjang: 'Fakultas',
     fakultas: 'Fakultas Teknik',
     prodi: 'S1 Teknik Informatika',
-    satker: '',
-    role: 'dosen',
+    satker: 'Biro Kepegawaian & SDM',
     username: '',
     password: ''
   });
@@ -57,15 +81,18 @@ function App() {
   // State Admin Tambah/Edit Pegawai
   const [formPegawai, setFormPegawai] = useState({
     docId: '',
-    id: '',
     nama: '',
     nip: '',
+    username: '',
+    password: '',
     jabatan: '',
     kategoriUnit: 'Fakultas',
     fakultas: 'Fakultas Teknik',
     prodi: 'S1 Teknik Informatika',
     satker: 'Biro Kepegawaian & SDM',
     role: 'dosen',
+    subJabatanDT: 'Rektor',
+    subLingkupTendikPenunjang: 'Fakultas',
     jatahCuti: 12
   });
 
@@ -112,6 +139,10 @@ function App() {
       setDaftarJenisCuti(snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() })));
     });
 
+    const unsubJabatan = onSnapshot(collection(db, "masterJabatan"), (snapshot) => {
+      setDaftarJabatan(snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() })));
+    });
+
     const unsubPegawai = onSnapshot(collection(db, "pegawai"), (snapshot) => {
       const data = snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
       setDaftarPegawai(data);
@@ -127,6 +158,7 @@ function App() {
       unsubSatker();
       unsubJenisIzin();
       unsubJenisCuti();
+      unsubJabatan();
       unsubPegawai();
       unsubRiwayat();
     };
@@ -135,17 +167,23 @@ function App() {
   const seedInitialData = async () => {
     try {
       await addDoc(collection(db, "pegawai"), {
-        id: 'ADM01', username: 'admin', password: '123', nama: 'Admin Sistem IT', nip: 'ADM001', fakultas: '', prodi: '', satker: 'Pusat Komputer & Data (Puskom)', jabatan: 'Administrator IT', role: 'admin', jatahCuti: 12, statusAkun: 'Aktif'
+        username: 'admin', password: '123', nama: 'Admin Sistem IT', nip: 'ADM001', fakultas: '', prodi: '', satker: 'Pusat Komputer & Data (Puskom)', jabatan: 'Administrator IT', role: 'admin', jatahCuti: 12, statusAkun: 'Aktif'
       });
       await addDoc(collection(db, "pegawai"), {
-        id: 'REKTOR01', username: 'rektor', password: '123', nama: 'Dr. Nikolas, M.Si.', nip: '197001012000', fakultas: '', prodi: '', satker: 'Rektorat UTS', jabatan: 'Rektor UTS', role: 'rektor', jatahCuti: 12, statusAkun: 'Aktif'
+        username: 'rektor', password: '123', nama: 'Dr. Nikolas, M.Si.', nip: '197001012000', fakultas: '', prodi: '-', satker: 'Rektorat UTS', jabatan: 'Rektor', role: 'dosen_tugas_tambahan', subJabatanDT: 'Rektor', jatahCuti: 12, statusAkun: 'Aktif'
       });
       await addDoc(collection(db, "fakultas"), { id: 'FK01', nama: 'Fakultas Teknik' });
       await addDoc(collection(db, "prodi"), { id: 'PR01', fakultas: 'Fakultas Teknik', nama: 'S1 Teknik Informatika' });
       await addDoc(collection(db, "satker"), { id: 'SK01', nama: 'Biro Kepegawaian & SDM' });
       await addDoc(collection(db, "jenisIzin"), { id: 'JI01', nama: 'Sakit (Dengan / Tanpa Surat Dokter)' });
       await addDoc(collection(db, "jenisCuti"), { id: 'JC01', nama: 'Cuti Tahunan' });
-      alert('Inisialisasi data awal berhasil!');
+      
+      const defaultJabatans = ['Rektor', 'Warek I', 'Warek II', 'Warek III', 'Warek IV', 'Kepala BPMU', 'Kepala BPKO', 'Dekan', 'Wakil Dekan', 'Direktur Pasca Sarjana', 'Kaprodi', 'Sekretaris Prodi', 'Direktur', 'Kasub Direktur'];
+      for (const j of defaultJabatans) {
+        await addDoc(collection(db, "masterJabatan"), { nama: j });
+      }
+
+      alert('Inisialisasi data awal & master jabatan berhasil!');
     } catch (err) {
       console.error(err);
     }
@@ -168,37 +206,34 @@ function App() {
   const getInitialStatusByRole = (role) => {
     switch (role) {
       case 'dosen': return 'Menunggu Persetujuan Kaprodi';
-      case 'kaprodi':
-      case 'tendik_fakultas': return 'Menunggu Persetujuan Dekan';
-      case 'dekan': return 'Menunggu Persetujuan Rektor';
-      case 'tendik_rektorat':
-      case 'kepala_unit': return 'Menunggu Persetujuan Kepala Unit';
+      case 'dosen_tugas_tambahan': return 'Menunggu Persetujuan Rektor';
+      case 'tenaga_kependidikan': return 'Menunggu Persetujuan Atasan Fakultas/Rektorat';
+      case 'tenaga_penunjang': return 'Menunggu Persetujuan Atasan Unit';
       default: return 'Menunggu Persetujuan Atasan';
     }
   };
 
-  const isApproverRole = ['kaprodi', 'dekan', 'kepala_unit'].includes(currentUser?.role);
+  const isApproverRole = ['kaprodi', 'dekan', 'dosen_tugas_tambahan', 'tenaga_kependidikan'].includes(currentUser?.role);
 
   const getPendingForCurrentUser = () => {
     if (!currentUser) return [];
-    if (currentUser.role === 'kaprodi') {
+    if (currentUser.role === 'dosen_tugas_tambahan' && currentUser.subJabatanDT === 'Kaprodi') {
       return riwayatIzin.filter(i => i.status === 'Menunggu Persetujuan Kaprodi' && i.prodi === currentUser.prodi);
     }
-    if (currentUser.role === 'dekan') {
+    if (currentUser.role === 'dosen_tugas_tambahan' && currentUser.subJabatanDT === 'Dekan') {
       return riwayatIzin.filter(i => i.status === 'Menunggu Persetujuan Dekan' && i.fakultas === currentUser.fakultas);
     }
-    if (currentUser.role === 'kepala_unit') {
-      return riwayatIzin.filter(i => i.status === 'Menunggu Persetujuan Kepala Unit' && i.satker === currentUser.satker);
+    if (currentUser.role === 'dosen_tugas_tambahan' && ['Rektor', 'Warek I', 'Warek II', 'Warek III', 'Warek IV'].includes(currentUser.subJabatanDT)) {
+      return riwayatIzin.filter(i => i.status.includes('Menunggu Persetujuan'));
     }
     return [];
   };
 
   const getRiwayatForCurrentUser = () => {
     if (!currentUser) return [];
-    if (currentUser.role === 'admin' || currentUser.role === 'rektor') return riwayatIzin;
-    if (currentUser.role === 'dekan') return riwayatIzin.filter(i => i.fakultas === currentUser.fakultas);
-    if (currentUser.role === 'kaprodi') return riwayatIzin.filter(i => i.prodi === currentUser.prodi);
-    if (currentUser.role === 'kepala_unit') return riwayatIzin.filter(i => i.satker === currentUser.satker);
+    if (currentUser.role === 'admin' || currentUser.subJabatanDT === 'Rektor') return riwayatIzin;
+    if (currentUser.subJabatanDT === 'Dekan') return riwayatIzin.filter(i => i.fakultas === currentUser.fakultas);
+    if (currentUser.subJabatanDT === 'Kaprodi') return riwayatIzin.filter(i => i.prodi === currentUser.prodi);
     return riwayatIzin.filter(i => i.nip === currentUser.nip);
   };
 
@@ -206,7 +241,7 @@ function App() {
     e.preventDefault();
     const query = loginInput.trim().toLowerCase();
     const found = daftarPegawai.find(p => 
-      (p.username?.toLowerCase() === query || p.id?.toLowerCase() === query || p.nip?.toLowerCase() === query) &&
+      (p.username?.toLowerCase() === query || p.nip?.toLowerCase() === query) &&
       p.password === passwordInput
     );
 
@@ -223,11 +258,15 @@ function App() {
     }
   };
 
-  // Handler Registrasi Mandiri dengan Role Lengkap
+  const needsProdi = (jabatan) => {
+    return ['Kaprodi', 'Sekretaris Prodi', 'Direktur Pasca Sarjana'].includes(jabatan);
+  };
+
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
+    const uname = regForm.username.trim().toLowerCase();
     const exists = daftarPegawai.some(p => 
-      p.username?.toLowerCase() === regForm.username.trim().toLowerCase() ||
+      p.username?.toLowerCase() === uname ||
       p.nip === regForm.nip.trim()
     );
 
@@ -236,26 +275,36 @@ function App() {
       return;
     }
 
-    // Jika Dekan, prodi diset kosong / tanda -
-    const isDekanOrNoProdi = regForm.role === 'dekan';
+    const isDT = regForm.role === 'dosen_tugas_tambahan';
+    const isTendikOrPenunjang = ['tenaga_kependidikan', 'tenaga_penunjang'].includes(regForm.role);
+    const needProdiCheck = isDT && needsProdi(regForm.subJabatanDT);
+
+    let finalJabatan = '';
+    if (regForm.role === 'dosen') finalJabatan = 'Dosen (DS)';
+    else if (isDT) finalJabatan = regForm.subJabatanDT;
+    else if (regForm.role === 'tenaga_kependidikan') finalJabatan = `Tenaga Kependidikan (${regForm.subLingkupTendikPenunjang})`;
+    else if (regForm.role === 'tenaga_penunjang') finalJabatan = `Tenaga Penunjang (${regForm.subLingkupTendikPenunjang})`;
+
+    const finalProdi = (isDT && !needProdiCheck) || (isTendikOrPenunjang && regForm.subLingkupTendikPenunjang === 'Rektorat') ? '-' : regForm.prodi;
 
     try {
       await addDoc(collection(db, "pegawai"), {
-        id: `PGW${Date.now().toString().slice(-4)}`,
-        username: regForm.username.trim(),
+        username: uname,
         password: regForm.password,
         nama: regForm.nama.trim(),
         nip: regForm.nip.trim(),
-        fakultas: regForm.fakultas,
-        prodi: isDekanOrNoProdi ? '-' : regForm.prodi,
-        satker: '',
-        jabatan: regForm.role === 'dekan' ? `Dekan ${regForm.fakultas}` : regForm.role === 'kaprodi' ? `Kaprodi ${regForm.prodi}` : regForm.role.toUpperCase().replace('_', ' '),
+        fakultas: isTendikOrPenunjang && regForm.subLingkupTendikPenunjang === 'Rektorat' ? '' : regForm.fakultas,
+        prodi: finalProdi,
+        satker: isTendikOrPenunjang && regForm.subLingkupTendikPenunjang === 'Rektorat' ? (daftarSatker[0]?.nama || 'Rektorat UTS') : '',
+        jabatan: finalJabatan,
         role: regForm.role,
+        subJabatanDT: isDT ? regForm.subJabatanDT : '',
+        subLingkupTendikPenunjang: isTendikOrPenunjang ? regForm.subLingkupTendikPenunjang : '',
         jatahCuti: 12,
         statusAkun: 'Pending'
       });
       alert('Pendaftaran berhasil! Akun Anda sedang menunggu persetujuan Admin.');
-      setRegForm({ nama: '', nip: '', fakultas: 'Fakultas Teknik', prodi: 'S1 Teknik Informatika', satker: '', role: 'dosen', username: '', password: '' });
+      setRegForm({ nama: '', nip: '', role: 'dosen', subJabatanDT: activeJabatanList[0]?.nama || 'Rektor', subLingkupTendikPenunjang: 'Fakultas', fakultas: 'Fakultas Teknik', prodi: 'S1 Teknik Informatika', satker: 'Biro Kepegawaian & SDM', username: '', password: '' });
       setIsRegisterMode(false);
     } catch (err) {
       console.error(err);
@@ -279,30 +328,34 @@ function App() {
     setPasswordInput('');
   };
 
-  // Handler Simpan Pegawai oleh Admin (Penanganan khusus Dekan -> Prodi = '-')
   const handleSavePegawai = async (e) => {
     e.preventDefault();
-    const isFakultas = formPegawai.kategoriUnit === 'Fakultas';
-    let autoJabatan = formPegawai.jabatan;
+    const isDT = formPegawai.role === 'dosen_tugas_tambahan';
+    const isTendikOrPenunjang = ['tenaga_kependidikan', 'tenaga_penunjang'].includes(formPegawai.role);
+    const isRektoratScope = isTendikOrPenunjang && formPegawai.subLingkupTendikPenunjang === 'Rektorat';
+    const needProdiCheck = isDT && needsProdi(formPegawai.subJabatanDT);
 
-    if (formPegawai.role === 'kaprodi') autoJabatan = `Kaprodi ${formPegawai.prodi}`;
-    else if (formPegawai.role === 'dekan') autoJabatan = `Dekan ${formPegawai.fakultas}`;
-    else if (formPegawai.role === 'kepala_unit') autoJabatan = `Kepala Unit / Direktur`;
+    let finalJabatan = '';
+    if (formPegawai.role === 'dosen') finalJabatan = 'Dosen (DS)';
+    else if (isDT) finalJabatan = formPegawai.subJabatanDT;
+    else if (formPegawai.role === 'tenaga_kependidikan') finalJabatan = `Tenaga Kependidikan (${formPegawai.subLingkupTendikPenunjang})`;
+    else if (formPegawai.role === 'tenaga_penunjang') finalJabatan = `Tenaga Penunjang (${formPegawai.subLingkupTendikPenunjang})`;
 
-    // Jika Dekan atau role non-prodi fakultas, prodi diatur '-'
-    const finalProdi = (formPegawai.role === 'dekan' && isFakultas) ? '-' : (isFakultas ? formPegawai.prodi : '-');
+    const finalProdi = (isDT && !needProdiCheck) || isRektoratScope ? '-' : formPegawai.prodi;
+    const uname = formPegawai.username.trim().toLowerCase();
 
     const dataPayload = {
-      id: formPegawai.id || `PGW00${daftarPegawai.length + 1}`,
-      username: formPegawai.id ? formPegawai.id.toLowerCase() : `pgw00${daftarPegawai.length + 1}`,
-      password: '123',
-      nama: formPegawai.nama,
-      nip: formPegawai.nip,
-      fakultas: isFakultas ? formPegawai.fakultas : '',
+      username: uname,
+      password: formPegawai.password,
+      nama: formPegawai.nama.trim(),
+      nip: formPegawai.nip.trim(),
+      fakultas: isRektoratScope ? '' : formPegawai.fakultas,
       prodi: finalProdi,
-      satker: !isFakultas ? formPegawai.satker : '',
-      jabatan: autoJabatan,
+      satker: isRektoratScope ? formPegawai.satker : '',
+      jabatan: finalJabatan,
       role: formPegawai.role,
+      subJabatanDT: isDT ? formPegawai.subJabatanDT : '',
+      subLingkupTendikPenunjang: isTendikOrPenunjang ? formPegawai.subLingkupTendikPenunjang : '',
       jatahCuti: formPegawai.jatahCuti,
       statusAkun: 'Aktif'
     };
@@ -310,15 +363,15 @@ function App() {
     try {
       if (formPegawai.docId) {
         await updateDoc(doc(db, "pegawai", formPegawai.docId), dataPayload);
-        alert('Data dan Jabatan Pegawai berhasil diperbarui!');
+        alert('Data, Username, dan Password Pegawai berhasil diperbarui!');
       } else {
         await addDoc(collection(db, "pegawai"), dataPayload);
-        alert('Data pegawai UTS baru berhasil ditambahkan!');
+        alert('Data pegawai UTS baru berhasil ditambahkan dan langsung aktif!');
       }
       setFormPegawai({
-        docId: '', id: '', nama: '', nip: '', jabatan: '', kategoriUnit: 'Fakultas',
+        docId: '', nama: '', nip: '', username: '', password: '', jabatan: '', kategoriUnit: 'Fakultas',
         fakultas: daftarFakultas[0]?.nama || 'Fakultas Teknik', prodi: daftarProdi[0]?.nama || 'S1 Teknik Informatika',
-        satker: daftarSatker[0]?.nama || 'Biro Kepegawaian & SDM', role: 'dosen', jatahCuti: 12
+        satker: daftarSatker[0]?.nama || 'Biro Kepegawaian & SDM', role: 'dosen', subJabatanDT: activeJabatanList[0]?.nama || 'Rektor', subLingkupTendikPenunjang: 'Fakultas', jatahCuti: 12
       });
     } catch (err) {
       console.error(err);
@@ -326,8 +379,8 @@ function App() {
     }
   };
 
-  const handleDeletePegawai = async (docId, id) => {
-    if (['ADM01', 'REKTOR01'].includes(id)) {
+  const handleDeletePegawai = async (docId, username) => {
+    if (['admin', 'rektor'].includes(username)) {
       alert('Akun Utama Admin / Rektor tidak dapat dihapus!');
       return;
     }
@@ -365,6 +418,15 @@ function App() {
     setInputSatker('');
   };
   const handleDeleteSatker = async (docId) => { await deleteDoc(doc(db, "satker", docId)); };
+
+  const handleAddJabatanMaster = async (e) => {
+    e.preventDefault();
+    if (!inputJabatanMaster.trim()) return;
+    await addDoc(collection(db, "masterJabatan"), { nama: inputJabatanMaster.trim() });
+    setInputJabatanMaster('');
+    alert('Jabatan baru berhasil ditambahkan ke master!');
+  };
+  const handleDeleteJabatanMaster = async (docId) => { await deleteDoc(doc(db, "masterJabatan", docId)); };
 
   const handleAddJenisIzin = async (e) => {
     e.preventDefault();
@@ -462,7 +524,7 @@ function App() {
   const handleSubmitCuti = async (e) => {
     e.preventDefault();
     const durasi = hitungDurasiHari(formCuti.tanggalMulai, formCuti.tanggalSelesai);
-    const pgwData = daftarPegawai.find(p => p.nip === currentUser.nip || p.id === currentUser.id);
+    const pgwData = daftarPegawai.find(p => p.nip === currentUser.nip || p.username === currentUser.username);
     const sisaCuti = pgwData ? pgwData.jatahCuti : 12;
     const initialStatus = getInitialStatusByRole(currentUser.role);
 
@@ -511,7 +573,7 @@ function App() {
       await updateDoc(doc(db, "riwayatIzin", docId), { status: finalStatusText });
 
       if (isApprove && targetItem.kategori === 'Cuti') {
-        const foundPgw = daftarPegawai.find(p => p.nip === targetItem.nip || p.id === targetItem.nip);
+        const foundPgw = daftarPegawai.find(p => p.nip === targetItem.nip || p.username === targetItem.username);
         if (foundPgw) {
           const sisaBaru = Math.max(0, foundPgw.jatahCuti - targetItem.durasi);
           await updateDoc(doc(db, "pegawai", foundPgw.docId), { jatahCuti: sisaBaru });
@@ -561,7 +623,7 @@ function App() {
     return (
       <div style={{ position: 'relative', minHeight: '100vh', width: '100%', backgroundImage: `url(${bgUTS})`, backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
         <div className="backdrop" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)', zIndex: 1 }}></div>
-        <div style={{ ...styles.loginCard, position: 'relative', zIndex: 2, backgroundColor: 'rgba(255, 255, 255, 0.88)', backdropFilter: 'blur(8px)', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)' }}>
+        <div style={{ ...styles.loginCard, position: 'relative', zIndex: 2, backgroundColor: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(8px)', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)' }}>
           <div style={{ textAlign: 'center', marginBottom: '20px' }}>
             <img src={logoUTS} alt="Logo UTS" style={{ width: '75px', height: '75px', objectFit: 'contain', marginBottom: '10px' }} />
             <h2 style={{ fontSize: '20px', color: '#1e293b' }}>E-Izin & Cuti Pegawai UTS</h2>
@@ -597,23 +659,61 @@ function App() {
           ) : (
             <form onSubmit={handleRegisterSubmit} className="form-box">
               <h4 style={{ textAlign: 'center', color: '#0284c7', marginBottom: '15px' }}>Formulir Registrasi Mandiri</h4>
+              
               <div className="form-group">
                 <label className="form-label">Nama Lengkap & Gelar</label>
                 <input type="text" value={regForm.nama} onChange={(e) => setRegForm({...regForm, nama: e.target.value})} placeholder="Nama..." className="form-input" required />
               </div>
+
               <div className="form-group">
                 <label className="form-label">NIP / NIDN</label>
                 <input type="text" value={regForm.nip} onChange={(e) => setRegForm({...regForm, nip: e.target.value})} placeholder="NIP..." className="form-input" required />
               </div>
-              <div className="form-group">
-                <label className="form-label">Fakultas Tempat Bertugas</label>
-                <select value={regForm.fakultas} onChange={(e) => setRegForm({...regForm, fakultas: e.target.value})} className="form-input">
-                  {daftarFakultas.map(f => <option key={f.docId} value={f.nama}>{f.nama}</option>)}
+
+              {/* Kategori / Jabatan Pegawai dipindah ke paling atas agar user memilih terlebih dahulu */}
+              <div className="form-group" style={{ backgroundColor: '#f8fafc', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                <label className="form-label" style={{ color: '#0f172a', fontWeight: 'bold' }}>1. Kategori / Jabatan Pegawai</label>
+                <select value={regForm.role} onChange={(e) => setRegForm({...regForm, role: e.target.value})} className="form-input">
+                  <option value="dosen">Dosen (DS)</option>
+                  <option value="dosen_tugas_tambahan">Dosen Tugas Tambahan (DT)</option>
+                  <option value="tenaga_kependidikan">Tenaga Kependidikan</option>
+                  <option value="tenaga_penunjang">Tenaga Penunjang</option>
                 </select>
               </div>
 
-              {/* Sembunyikan pilihan prodi jika memilih Dekan */}
-              {regForm.role !== 'dekan' && (
+              {/* Sub-Jabatan Dosen DT */}
+              {regForm.role === 'dosen_tugas_tambahan' && (
+                <div className="form-group" style={{ backgroundColor: '#f0f9ff', padding: '10px', borderRadius: '6px', border: '1px solid #bae6fd' }}>
+                  <label className="form-label" style={{ color: '#0369a1', fontWeight: 'bold' }}>Pilih Posisi Tugas Tambahan (DT):</label>
+                  <select value={regForm.subJabatanDT} onChange={(e) => setRegForm({...regForm, subJabatanDT: e.target.value})} className="form-input">
+                    {activeJabatanList.map(j => <option key={j.docId} value={j.nama}>{j.nama}</option>)}
+                  </select>
+                </div>
+              )}
+
+              {/* Lingkup Penempatan Tendik / Penunjang */}
+              {['tenaga_kependidikan', 'tenaga_penunjang'].includes(regForm.role) && (
+                <div className="form-group">
+                  <label className="form-label">Lingkup Penempatan</label>
+                  <select value={regForm.subLingkupTendikPenunjang} onChange={(e) => setRegForm({...regForm, subLingkupTendikPenunjang: e.target.value})} className="form-input">
+                    <option value="Fakultas">Fakultas</option>
+                    <option value="Rektorat">Rektorat</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Fakultas */}
+              {!(['tenaga_kependidikan', 'tenaga_penunjang'].includes(regForm.role) && regForm.subLingkupTendikPenunjang === 'Rektorat') && (
+                <div className="form-group">
+                  <label className="form-label">Fakultas Tempat Bertugas</label>
+                  <select value={regForm.fakultas} onChange={(e) => setRegForm({...regForm, fakultas: e.target.value})} className="form-input">
+                    {daftarFakultas.map(f => <option key={f.docId} value={f.nama}>{f.nama}</option>)}
+                  </select>
+                </div>
+              )}
+
+              {/* Program Studi */}
+              {!(regForm.role === 'dosen_tugas_tambahan' && !needsProdi(regForm.subJabatanDT)) && !(['tenaga_kependidikan', 'tenaga_penunjang'].includes(regForm.role) && regForm.subLingkupTendikPenunjang === 'Rektorat') && (
                 <div className="form-group">
                   <label className="form-label">Program Studi</label>
                   <select value={regForm.prodi} onChange={(e) => setRegForm({...regForm, prodi: e.target.value})} className="form-input">
@@ -622,28 +722,30 @@ function App() {
                 </div>
               )}
 
+              {/* Satker */}
+              {['tenaga_kependidikan', 'tenaga_penunjang'].includes(regForm.role) && regForm.subLingkupTendikPenunjang === 'Rektorat' && (
+                <div className="form-group">
+                  <label className="form-label">Satuan Kerja / Biro Rektorat</label>
+                  <select value={regForm.satker} onChange={(e) => setRegForm({...regForm, satker: e.target.value})} className="form-input">
+                    {daftarSatker.map(s => <option key={s.docId} value={s.nama}>{s.nama}</option>)}
+                  </select>
+                </div>
+              )}
+
               <div className="form-group">
-                <label className="form-label">Kategori / Jabatan Pegawai</label>
-                <select value={regForm.role} onChange={(e) => setRegForm({...regForm, role: e.target.value})} className="form-input">
-                  <option value="dosen">Dosen (Persetujuan Kaprodi)</option>
-                  <option value="kaprodi">Kaprodi (Persetujuan Dekan)</option>
-                  <option value="dekan">Dekan Fakultas (Persetujuan Rektor)</option>
-                  <option value="kepala_unit">Kepala Unit / Direktur</option>
-                  <option value="tendik_fakultas">Tendik Fakultas (Persetujuan Dekan)</option>
-                  <option value="tendik_rektorat">Tendik Rektorat (Persetujuan Kepala Unit)</option>
-                </select>
+                <label className="form-label">Username Pilihan (Untuk Login)</label>
+                <input type="text" value={regForm.username} onChange={(e) => setRegForm({...regForm, username: e.target.value})} placeholder="Buat username..." className="form-input" required />
               </div>
-              <div className="form-group">
-                <label className="form-label">Username Pilihan</label>
-                <input type="text" value={regForm.username} onChange={(e) => setRegForm({...regForm, username: e.target.value})} placeholder="Username..." className="form-input" required />
-              </div>
+
               <div className="form-group">
                 <label className="form-label">Password Pilihan</label>
-                <input type="password" value={regForm.password} onChange={(e) => setRegForm({...regForm, password: e.target.value})} placeholder="Password..." className="form-input" required />
+                <input type="password" value={regForm.password} onChange={(e) => setRegForm({...regForm, password: e.target.value})} placeholder="Buat password..." className="form-input" required />
               </div>
+
               <button type="submit" className="btn-green" style={{ width: '100%', justifyContent: 'center', marginTop: '10px' }}>
                 <i className="fa-solid fa-user-plus"></i> Daftar Akun Pegawai
               </button>
+
               <div style={{ textAlign: 'center', marginTop: '15px' }}>
                 <span onClick={() => setIsRegisterMode(false)} style={{ fontSize: '13px', color: '#64748b', cursor: 'pointer' }}>
                   <i className="fa-solid fa-arrow-left"></i> Kembali ke Login
@@ -669,7 +771,7 @@ function App() {
           <li className={activeMenu === 'dashboard' ? 'menu-item menu-active' : 'menu-item'} onClick={() => handleMenuClick('dashboard')}>
             <i className="fa-solid fa-chart-line icon-menu"></i> Dashboard
           </li>
-          {currentUser.role !== 'admin' && currentUser.role !== 'rektor' && (
+          {currentUser.role !== 'admin' && currentUser.subJabatanDT !== 'Rektor' && (
             <>
               <li className={activeMenu === 'ajukan-izin' ? 'menu-item menu-active' : 'menu-item'} onClick={() => handleMenuClick('ajukan-izin')}>
                 <i className="fa-solid fa-file-pen icon-menu"></i> Form Permohonan Izin
@@ -761,7 +863,7 @@ function App() {
                 </div>
               </div>
 
-              {currentUser.role === 'rektor' && (
+              {currentUser.subJabatanDT === 'Rektor' && (
                 <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', marginTop: '20px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
                   <div style={{ borderBottom: '2px solid #0284c7', paddingBottom: '12px', marginBottom: '15px' }}>
                     <h3 style={{ margin: 0, color: '#1e293b' }}>
@@ -771,7 +873,7 @@ function App() {
                   </div>
                   <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '20px', backgroundColor: '#f8fafc', padding: '12px', borderRadius: '8px' }}>
                     <div>
-                      <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px', color: '#475569' }}>Kategori Filter:</label>
+                      <label className="form-label">Kategori Filter:</label>
                       <select value={filterRektorKategori} onChange={(e) => { setFilterRektorKategori(e.target.value); setFilterRektorNilai(''); }} className="form-input" style={{ padding: '6px 12px', fontSize: '13px' }}>
                         <option value="Semua">Tampilkan Semua Unit</option>
                         <option value="Fakultas">Filter per Fakultas</option>
@@ -781,7 +883,7 @@ function App() {
                     </div>
                     {filterRektorKategori === 'Fakultas' && (
                       <div>
-                        <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px', color: '#475569' }}>Pilih Fakultas:</label>
+                        <label className="form-label">Pilih Fakultas:</label>
                         <select value={filterRektorNilai} onChange={(e) => setFilterRektorNilai(e.target.value)} className="form-input" style={{ padding: '6px 12px', fontSize: '13px' }}>
                           <option value="">-- Semua Fakultas --</option>
                           {daftarFakultas.map(f => <option key={f.docId} value={f.nama}>{f.nama}</option>)}
@@ -790,7 +892,7 @@ function App() {
                     )}
                     {filterRektorKategori === 'Prodi' && (
                       <div>
-                        <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px', color: '#475569' }}>Pilih Program Studi:</label>
+                        <label className="form-label">Pilih Program Studi:</label>
                         <select value={filterRektorNilai} onChange={(e) => setFilterRektorNilai(e.target.value)} className="form-input" style={{ padding: '6px 12px', fontSize: '13px' }}>
                           <option value="">-- Semua Prodi --</option>
                           {daftarProdi.map(p => <option key={p.docId} value={p.nama}>{p.nama} ({p.fakultas})</option>)}
@@ -799,7 +901,7 @@ function App() {
                     )}
                     {filterRektorKategori === 'Satker' && (
                       <div>
-                        <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px', color: '#475569' }}>Pilih Satuan Kerja:</label>
+                        <label className="form-label">Pilih Satuan Kerja:</label>
                         <select value={filterRektorNilai} onChange={(e) => setFilterRektorNilai(e.target.value)} className="form-input" style={{ padding: '6px 12px', fontSize: '13px' }}>
                           <option value="">-- Semua Satker --</option>
                           {daftarSatker.map(s => <option key={s.docId} value={s.nama}>{s.nama}</option>)}
@@ -836,7 +938,7 @@ function App() {
                 </div>
               )}
 
-              {currentUser.role !== 'admin' && currentUser.role !== 'rektor' && (
+              {currentUser.role !== 'admin' && currentUser.subJabatanDT !== 'Rektor' && (
                 <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', marginTop: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '5px solid #0284c7' }}>
                   <div>
                     <h3 style={{ margin: 0, fontSize: '16px', color: '#1e293b' }}>
@@ -847,7 +949,7 @@ function App() {
                   <div style={{ textAlign: 'right' }}>
                     <span style={{ fontSize: '28px', fontWeight: 'bold', color: '#0284c7' }}>
                       {(() => {
-                        const pgwData = daftarPegawai.find(p => p.nip === currentUser?.nip || p.id === currentUser?.id);
+                        const pgwData = daftarPegawai.find(p => p.nip === currentUser?.nip || p.username === currentUser?.username);
                         return pgwData?.jatahCuti ?? 12;
                       })()}
                     </span>
@@ -866,15 +968,15 @@ function App() {
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
                       <thead>
                         <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
-                          <th style={{ padding: '10px' }}>NIP / ID</th><th style={{ padding: '10px' }}>Nama Pegawai</th><th style={{ padding: '10px' }}>Fakultas / Satker</th><th style={{ padding: '10px' }}>Prodi</th><th style={{ padding: '10px', textAlign: 'center' }}>Terpakai</th><th style={{ padding: '10px', textAlign: 'center' }}>Sisa Cuti</th>
+                          <th style={{ padding: '10px' }}>Username / NIP</th><th style={{ padding: '10px' }}>Nama Pegawai</th><th style={{ padding: '10px' }}>Fakultas / Satker</th><th style={{ padding: '10px' }}>Prodi</th><th style={{ padding: '10px', textAlign: 'center' }}>Terpakai</th><th style={{ padding: '10px', textAlign: 'center' }}>Sisa Cuti</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {daftarPegawai.filter(p => p.role !== 'admin' && p.role !== 'rektor').map((pgw) => {
+                        {daftarPegawai.filter(p => p.role !== 'admin' && p.subJabatanDT !== 'Rektor').map((pgw) => {
                           const terpakai = 12 - pgw.jatahCuti;
                           return (
                             <tr key={pgw.docId} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '10px', fontWeight: 'bold' }}>{pgw.nip}</td>
+                              <td style={{ padding: '10px', fontWeight: 'bold' }}>{pgw.username} <br/><small style={{color:'#64748b'}}>{pgw.nip}</small></td>
                               <td style={{ padding: '10px' }}>{pgw.nama}<br/><small style={{color:'#64748b'}}>{pgw.jabatan}</small></td>
                               <td style={{ padding: '10px' }}>{pgw.fakultas || pgw.satker || '-'}</td>
                               <td style={{ padding: '10px' }}>{pgw.prodi || '-'}</td>
@@ -895,7 +997,7 @@ function App() {
             </div>
           )}
 
-          {activeMenu === 'ajukan-izin' && currentUser.role !== 'rektor' && (
+          {activeMenu === 'ajukan-izin' && currentUser.subJabatanDT !== 'Rektor' && (
             <div className="form-container" style={{ maxWidth: '600px', margin: '0 auto' }}>
               <div style={{ borderBottom: '2px solid #f59e0b', paddingBottom: '10px', marginBottom: '15px' }}>
                 <h3 style={{ margin: 0, color: '#1e293b' }}><i className="fa-solid fa-file-pen" style={{ color: '#f59e0b', marginRight: '8px' }}></i>Formulir Permohonan Izin</h3>
@@ -946,7 +1048,7 @@ function App() {
             </div>
           )}
 
-          {activeMenu === 'ajukan-cuti' && currentUser.role !== 'rektor' && (
+          {activeMenu === 'ajukan-cuti' && currentUser.subJabatanDT !== 'Rektor' && (
             <div className="form-container" style={{ maxWidth: '600px', margin: '0 auto' }}>
               <div style={{ borderBottom: '2px solid #0284c7', paddingBottom: '10px', marginBottom: '15px' }}>
                 <h3 style={{ margin: 0, color: '#1e293b' }}><i className="fa-solid fa-umbrella-beach" style={{ color: '#0284c7', marginRight: '8px' }}></i>Formulir Permohonan Cuti</h3>
@@ -956,7 +1058,7 @@ function App() {
                 <span style={{ fontSize: '13px', color: '#0369a1', fontWeight: '500' }}>Sisa Kuota Cuti Tahunan Anda:</span>
                 <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#0284c7' }}>
                   {(() => {
-                    const pgwData = daftarPegawai.find(p => p.nip === currentUser?.nip || p.id === currentUser?.id);
+                    const pgwData = daftarPegawai.find(p => p.nip === currentUser?.nip || p.username === currentUser?.username);
                     return pgwData?.jatahCuti ?? 12;
                   })()} Hari
                 </span>
@@ -998,9 +1100,8 @@ function App() {
             <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', overflowX: 'auto' }}>
               <h3>Daftar Permohonan Masuk untuk {currentUser.jabatan}</h3>
               <p style={{ fontSize: '13px', color: '#666', marginBottom: '15px' }}>
-                {currentUser.role === 'kaprodi' && `Menampilkan pengajuan khusus dari Dosen di ${currentUser.prodi}.`}
-                {currentUser.role === 'dekan' && `Menampilkan pengajuan khusus dari Kaprodi/Tendik di ${currentUser.fakultas}.`}
-                {currentUser.role === 'kepala_unit' && `Menampilkan pengajuan khusus dari Tendik di ${currentUser.satker}.`}
+                {currentUser.subJabatanDT === 'Kaprodi' && `Menampilkan pengajuan khusus dari Dosen di ${currentUser.prodi}.`}
+                {currentUser.subJabatanDT === 'Dekan' && `Menampilkan pengajuan khusus dari Kaprodi/Tendik di ${currentUser.fakultas}.`}
               </p>
               <table className="table-style">
                 <thead>
@@ -1075,6 +1176,25 @@ function App() {
                     ))}
                   </ul>
                 </div>
+
+                {/* Master Jabatan Struktural */}
+                <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', borderTop: '4px solid #059669' }}>
+                  <h4>Master Jabatan Struktural (DT)</h4>
+                  <form onSubmit={handleAddJabatanMaster} style={{ marginBottom: '15px', display: 'flex', gap: '8px' }}>
+                    <input type="text" value={inputJabatanMaster} onChange={(e) => setInputJabatanMaster(e.target.value)} placeholder="Nama Jabatan Baru..." className="form-input" required />
+                    <button type="submit" style={{ backgroundColor: '#059669', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Tambah</button>
+                  </form>
+                  <ul style={{ listStyle: 'none', padding: 0, margin: 0, maxHeight: '150px', overflowY: 'auto' }}>
+                    {activeJabatanList.map(j => (
+                      <li key={j.docId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', borderBottom: '1px solid #f1f5f9', fontSize: '13px' }}>
+                        <span>{j.nama}</span>
+                        {!j.docId.startsWith('def-') && (
+                          <button onClick={() => handleDeleteJabatanMaster(j.docId)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}><i className="fa-solid fa-trash"></i></button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
@@ -1137,12 +1257,8 @@ function App() {
           {activeMenu === 'master-pegawai' && currentUser.role === 'admin' && (
             <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
               <div className="form-container" style={{ flex: 1, minWidth: '300px' }}>
-                <h3>Tambah / Penetapan Jabatan Pegawai</h3>
+                <h3>Tambah / Daftarkan Karyawan (Admin)</h3>
                 <form onSubmit={handleSavePegawai} className="form-box">
-                  <div className="form-group">
-                    <label className="form-label">ID / Username Pegawai</label>
-                    <input type="text" value={formPegawai.id} onChange={(e)=>setFormPegawai({...formPegawai, id:e.target.value})} placeholder="Username..." className="form-input" required />
-                  </div>
                   <div className="form-group">
                     <label className="form-label">Nama Lengkap & Gelar</label>
                     <input type="text" value={formPegawai.nama} onChange={(e)=>setFormPegawai({...formPegawai, nama:e.target.value})} placeholder="Nama..." className="form-input" required />
@@ -1152,55 +1268,78 @@ function App() {
                     <input type="text" value={formPegawai.nip} onChange={(e)=>setFormPegawai({...formPegawai, nip:e.target.value})} placeholder="NIP..." className="form-input" required />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Tipe Penempatan Unit</label>
-                    <select value={formPegawai.kategoriUnit} onChange={(e) => setFormPegawai({...formPegawai, kategoriUnit: e.target.value})} className="form-input">
-                      <option value="Fakultas">Fakultas & Program Studi</option>
-                      <option value="Satker">Satuan Kerja / Biro Rektorat</option>
+                    <label className="form-label">Username (Untuk Login Karyawan)</label>
+                    <input type="text" value={formPegawai.username} onChange={(e)=>setFormPegawai({...formPegawai, username:e.target.value})} placeholder="Username..." className="form-input" required />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Password</label>
+                    <input type="password" value={formPegawai.password} onChange={(e)=>setFormPegawai({...formPegawai, password:e.target.value})} placeholder="Password..." className="form-input" required />
+                  </div>
+
+                  {/* Kategori / Jabatan dipindah ke atas */}
+                  <div className="form-group" style={{ backgroundColor: '#f8fafc', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                    <label className="form-label" style={{ color: '#0f172a', fontWeight: 'bold' }}>Pilih Jabatan / Role Akses</label>
+                    <select value={formPegawai.role} onChange={(e)=>setFormPegawai({...formPegawai, role:e.target.value})} className="form-input">
+                      <option value="dosen">Dosen (DS)</option>
+                      <option value="dosen_tugas_tambahan">Dosen Tugas Tambahan (DT)</option>
+                      <option value="tenaga_kependidikan">Tenaga Kependidikan</option>
+                      <option value="tenaga_penunjang">Tenaga Penunjang</option>
+                      <option value="admin">Admin Sistem</option>
                     </select>
                   </div>
-                  {formPegawai.kategoriUnit === 'Fakultas' ? (
-                    <>
-                      <div className="form-group">
-                        <label className="form-label">Fakultas</label>
-                        <select value={formPegawai.fakultas} onChange={(e) => setFormPegawai({...formPegawai, fakultas: e.target.value})} className="form-input">
-                          {daftarFakultas.map(f => <option key={f.docId} value={f.nama}>{f.nama}</option>)}
-                        </select>
-                      </div>
 
-                      {/* Sembunyikan prodi jika role di panel admin adalah Dekan */}
-                      {formPegawai.role !== 'dekan' && (
-                        <div className="form-group">
-                          <label className="form-label">Program Studi</label>
-                          <select value={formPegawai.prodi} onChange={(e) => setFormPegawai({...formPegawai, prodi: e.target.value})} className="form-input">
-                            {daftarProdi.filter(p => p.fakultas === formPegawai.fakultas).map(p => <option key={p.docId} value={p.nama}>{p.nama}</option>)}
-                          </select>
-                        </div>
-                      )}
-                    </>
-                  ) : (
+                  {formPegawai.role === 'dosen_tugas_tambahan' && (
+                    <div className="form-group" style={{ backgroundColor: '#f0f9ff', padding: '10px', borderRadius: '6px', border: '1px solid #bae6fd' }}>
+                      <label className="form-label" style={{ color: '#0369a1', fontWeight: 'bold' }}>Pilih Posisi Tugas Tambahan (DT):</label>
+                      <select value={formPegawai.subJabatanDT} onChange={(e)=>setFormPegawai({...formPegawai, subJabatanDT: e.target.value})} className="form-input">
+                        {activeJabatanList.map(j => <option key={j.docId} value={j.nama}>{j.nama}</option>)}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Lingkup Penempatan Tendik / Penunjang */}
+                  {['tenaga_kependidikan', 'tenaga_penunjang'].includes(formPegawai.role) && (
                     <div className="form-group">
-                      <label className="form-label">Satuan Kerja / Biro</label>
+                      <label className="form-label">Lingkup Penempatan</label>
+                      <select value={formPegawai.subLingkupTendikPenunjang} onChange={(e) => setFormPegawai({...formPegawai, subLingkupTendikPenunjang: e.target.value})} className="form-input">
+                        <option value="Fakultas">Fakultas</option>
+                        <option value="Rektorat">Rektorat</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Fakultas */}
+                  {!(['tenaga_kependidikan', 'tenaga_penunjang'].includes(formPegawai.role) && formPegawai.subLingkupTendikPenunjang === 'Rektorat') && (
+                    <div className="form-group">
+                      <label className="form-label">Fakultas</label>
+                      <select value={formPegawai.fakultas} onChange={(e) => setFormPegawai({...formPegawai, fakultas: e.target.value})} className="form-input">
+                        {daftarFakultas.map(f => <option key={f.docId} value={f.nama}>{f.nama}</option>)}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Program Studi */}
+                  {!(formPegawai.role === 'dosen_tugas_tambahan' && !needsProdi(formPegawai.subJabatanDT)) && !(['tenaga_kependidikan', 'tenaga_penunjang'].includes(formPegawai.role) && formPegawai.subLingkupTendikPenunjang === 'Rektorat') && (
+                    <div className="form-group">
+                      <label className="form-label">Program Studi</label>
+                      <select value={formPegawai.prodi} onChange={(e) => setFormPegawai({...formPegawai, prodi: e.target.value})} className="form-input">
+                        {daftarProdi.filter(p => p.fakultas === formPegawai.fakultas).map(p => <option key={p.docId} value={p.nama}>{p.nama}</option>)}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Satker */}
+                  {['tenaga_kependidikan', 'tenaga_penunjang'].includes(formPegawai.role) && formPegawai.subLingkupTendikPenunjang === 'Rektorat' && (
+                    <div className="form-group">
+                      <label className="form-label">Satuan Kerja / Biro Rektorat</label>
                       <select value={formPegawai.satker} onChange={(e) => setFormPegawai({...formPegawai, satker: e.target.value})} className="form-input">
                         {daftarSatker.map(s => <option key={s.docId} value={s.nama}>{s.nama}</option>)}
                       </select>
                     </div>
                   )}
 
-                  <div className="form-group">
-                    <label className="form-label">Pilih Jabatan / Role Akses</label>
-                    <select value={formPegawai.role} onChange={(e)=>setFormPegawai({...formPegawai, role:e.target.value})} className="form-input">
-                      <option value="dosen">Dosen</option>
-                      <option value="kaprodi">Kaprodi</option>
-                      <option value="dekan">Dekan</option>
-                      <option value="kepala_unit">Kepala Unit (Direktur)</option>
-                      <option value="tendik_fakultas">Tendik Fakultas</option>
-                      <option value="tendik_rektorat">Tendik Rektorat</option>
-                      <option value="rektor">Rektor UTS</option>
-                      <option value="admin">Admin Sistem</option>
-                    </select>
-                  </div>
                   <button type="submit" className="btn-primary">
-                    <i className="fa-solid fa-user-check"></i> Simpan Pegawai
+                    <i className="fa-solid fa-user-check"></i> Simpan / Daftarkan Karyawan
                   </button>
                 </form>
               </div>
@@ -1210,13 +1349,13 @@ function App() {
                 <table className="table-style">
                   <thead>
                     <tr className="th-tr">
-                      <th className="th-cell">Nama & NIP</th><th className="th-cell">Fakultas / Satker</th><th className="th-cell">Prodi</th><th className="th-cell">Jabatan</th><th className="th-cell">Status</th><th className="th-cell">Aksi</th>
+                      <th className="th-cell">Nama & Username</th><th className="th-cell">Fakultas / Satker</th><th className="th-cell">Prodi</th><th className="th-cell">Jabatan</th><th className="th-cell">Status</th><th className="th-cell">Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
                     {daftarPegawai.map((p) => (
                       <tr key={p.docId} className="td-tr">
-                        <td className="td-cell"><b>{p.nama}</b><br/><small>{p.nip}</small></td>
+                        <td className="td-cell"><b>{p.nama}</b><br/><small style={{color:'#0284c7'}}>User: <b>{p.username}</b></small><br/><small style={{color:'#64748b'}}>NIP: {p.nip}</small></td>
                         <td className="td-cell">{p.fakultas || p.satker || '-'}</td>
                         <td className="td-cell">{p.prodi || '-'}</td>
                         <td className="td-cell"><span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', backgroundColor: '#e0f2fe', color: '#0369a1' }}>{p.jabatan}</span></td>
@@ -1226,10 +1365,10 @@ function App() {
                             {p.statusAkun === 'Pending' ? (
                               <button onClick={() => handleApprovePegawai(p.docId)} style={{ ...styles.btnAction, backgroundColor: '#059669' }}>Approve</button>
                             ) : (
-                              <button onClick={() => setFormPegawai({ docId: p.docId, id: p.id, nama: p.nama, nip: p.nip, jabatan: p.jabatan, kategoriUnit: p.satker ? 'Satker' : 'Fakultas', fakultas: p.fakultas || daftarFakultas[0]?.nama, prodi: p.prodi === '-' ? (daftarProdi[0]?.nama || '') : (p.prodi || daftarProdi[0]?.nama), satker: p.satker || daftarSatker[0]?.nama, role: p.role, jatahCuti: p.jatahCuti })} style={{ ...styles.btnAction, backgroundColor: '#0284c7' }}>Edit</button>
+                              <button onClick={() => setFormPegawai({ docId: p.docId, nama: p.nama, nip: p.nip, username: p.username || '', password: p.password || '', jabatan: p.jabatan, kategoriUnit: p.satker ? 'Satker' : 'Fakultas', fakultas: p.fakultas || daftarFakultas[0]?.nama, prodi: p.prodi === '-' ? (daftarProdi[0]?.nama || '') : (p.prodi || daftarProdi[0]?.nama), satker: p.satker || daftarSatker[0]?.nama, role: p.role || 'dosen', subJabatanDT: p.subJabatanDT || activeJabatanList[0]?.nama || 'Rektor', subLingkupTendikPenunjang: p.subLingkupTendikPenunjang || 'Fakultas', jatahCuti: p.jatahCuti })} style={{ ...styles.btnAction, backgroundColor: '#0284c7' }}>Edit</button>
                             )}
-                            {!['ADM01', 'REKTOR01'].includes(p.id) && (
-                              <button onClick={() => handleDeletePegawai(p.docId, p.id)} className="btn-danger"><i className="fa-solid fa-trash"></i></button>
+                            {!['admin', 'rektor'].includes(p.username) && (
+                              <button onClick={() => handleDeletePegawai(p.docId, p.username)} className="btn-danger"><i className="fa-solid fa-trash"></i></button>
                             )}
                           </div>
                         </td>
@@ -1247,16 +1386,16 @@ function App() {
                 <div>
                   <h3 style={{ margin: 0, color: '#1e293b' }}>
                     Rekapitulasi Permohonan Izin & Cuti
-                    {currentUser.role === 'dekan' && ` (${currentUser.fakultas})`}
-                    {currentUser.role === 'kaprodi' && ` (${currentUser.prodi})`}
+                    {currentUser.subJabatanDT === 'Dekan' && ` (${currentUser.fakultas})`}
+                    {currentUser.subJabatanDT === 'Kaprodi' && ` (${currentUser.prodi})`}
                   </h3>
                   <p style={{ fontSize: '12px', color: '#64748b', margin: '4px 0 0 0' }}>
-                    {currentUser.role === 'dekan' && `Menampilkan riwayat seluruh dosen dan staf di lingkungan ${currentUser.fakultas}.`}
-                    {currentUser.role === 'kaprodi' && `Menampilkan riwayat dosen khusus di lingkungan ${currentUser.prodi}.`}
-                    {(currentUser.role === 'admin' || currentUser.role === 'rektor') && 'Akses Pimpinan / Admin: Memantau seluruh riwayat kampus serta ekspor rekap ke format Excel.'}
+                    {currentUser.subJabatanDT === 'Dekan' && `Menampilkan riwayat seluruh dosen dan staf di lingkungan ${currentUser.fakultas}.`}
+                    {currentUser.subJabatanDT === 'Kaprodi' && `Menampilkan riwayat dosen khusus di lingkungan ${currentUser.prodi}.`}
+                    {(currentUser.role === 'admin' || currentUser.subJabatanDT === 'Rektor') && 'Akses Pimpinan / Admin: Memantau seluruh riwayat kampus serta ekspor rekap ke format Excel.'}
                   </p>
                 </div>
-                {(currentUser.role === 'admin' || currentUser.role === 'rektor' || currentUser.role === 'dekan') && (
+                {(currentUser.role === 'admin' || currentUser.subJabatanDT === 'Rektor' || currentUser.subJabatanDT === 'Dekan') && (
                   <button onClick={handleExportExcel} style={{ backgroundColor: '#059669', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <i className="fa-solid fa-file-excel"></i> Ekspor Rekapan ke Excel (.xls)
                   </button>
