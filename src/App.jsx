@@ -64,16 +64,17 @@ function App() {
   const [inputJenisCuti, setInputJenisCuti] = useState('');
   const [inputJabatanMaster, setInputJabatanMaster] = useState('');
 
-  // State Form Registrasi Mandiri Pegawai (Kategori/Role ditaruh paling atas)
+  // State Form Registrasi Mandiri Pegawai
   const [regForm, setRegForm] = useState({
     nama: '',
     nip: '',
     role: 'dosen',
     subJabatanDT: 'Rektor',
+    tipePenempatanDT: 'Fakultas', // Opsi penempatan khusus DT: Fakultas atau Satker
     subLingkupTendikPenunjang: 'Fakultas',
-    fakultas: 'Fakultas Teknik',
-    prodi: 'S1 Teknik Informatika',
-    satker: 'Biro Kepegawaian & SDM',
+    fakultas: '',
+    prodi: '',
+    satker: '',
     username: '',
     password: ''
   });
@@ -87,11 +88,12 @@ function App() {
     password: '',
     jabatan: '',
     kategoriUnit: 'Fakultas',
-    fakultas: 'Fakultas Teknik',
-    prodi: 'S1 Teknik Informatika',
-    satker: 'Biro Kepegawaian & SDM',
+    fakultas: '',
+    prodi: '',
+    satker: '',
     role: 'dosen',
     subJabatanDT: 'Rektor',
+    tipePenempatanDT: 'Fakultas',
     subLingkupTendikPenunjang: 'Fakultas',
     jatahCuti: 12
   });
@@ -120,15 +122,30 @@ function App() {
   // ================= SYNC DATA REAL-TIME DARI FIRESTORE =================
   useEffect(() => {
     const unsubFakultas = onSnapshot(collection(db, "fakultas"), (snapshot) => {
-      setDaftarFakultas(snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() })));
+      const dataFak = snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
+      setDaftarFakultas(dataFak);
+      if (dataFak.length > 0) {
+        setRegForm(prev => prev.fakultas ? prev : { ...prev, fakultas: dataFak[0].nama });
+        setFormPegawai(prev => prev.fakultas ? prev : { ...prev, fakultas: dataFak[0].nama });
+      }
     });
 
     const unsubProdi = onSnapshot(collection(db, "prodi"), (snapshot) => {
-      setDaftarProdi(snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() })));
+      const dataPrd = snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
+      setDaftarProdi(dataPrd);
+      if (dataPrd.length > 0) {
+        setRegForm(prev => prev.prodi ? prev : { ...prev, prodi: dataPrd[0].nama });
+        setFormPegawai(prev => prev.prodi ? prev : { ...prev, prodi: dataPrd[0].nama });
+      }
     });
 
     const unsubSatker = onSnapshot(collection(db, "satker"), (snapshot) => {
-      setDaftarSatker(snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() })));
+      const dataSat = snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
+      setDaftarSatker(dataSat);
+      if (dataSat.length > 0) {
+        setRegForm(prev => prev.satker ? prev : { ...prev, satker: dataSat[0].nama });
+        setFormPegawai(prev => prev.satker ? prev : { ...prev, satker: dataSat[0].nama });
+      }
     });
 
     const unsubJenisIzin = onSnapshot(collection(db, "jenisIzin"), (snapshot) => {
@@ -259,7 +276,7 @@ function App() {
   };
 
   const needsProdi = (jabatan) => {
-    return ['Kaprodi', 'Sekretaris Prodi', 'Direktur Pasca Sarjana'].includes(jabatan);
+    return ['Kaprodi', 'Sekretaris Prodi', 'Direktur Pasca Sarjana', 'Dosen (DS)'].includes(jabatan);
   };
 
   const handleRegisterSubmit = async (e) => {
@@ -277,7 +294,12 @@ function App() {
 
     const isDT = regForm.role === 'dosen_tugas_tambahan';
     const isTendikOrPenunjang = ['tenaga_kependidikan', 'tenaga_penunjang'].includes(regForm.role);
-    const needProdiCheck = isDT && needsProdi(regForm.subJabatanDT);
+    
+    // Tentukan apakah DT menggunakan Satker atau Fakultas
+    const isDTInSatker = isDT && regForm.tipePenempatanDT === 'Satker';
+    const isRektoratScope = (isTendikOrPenunjang && regForm.subLingkupTendikPenunjang === 'Rektorat') || isDTInSatker;
+
+    const showProdi = isDT ? needsProdi(regForm.subJabatanDT) : (regForm.role === 'dosen');
 
     let finalJabatan = '';
     if (regForm.role === 'dosen') finalJabatan = 'Dosen (DS)';
@@ -285,7 +307,7 @@ function App() {
     else if (regForm.role === 'tenaga_kependidikan') finalJabatan = `Tenaga Kependidikan (${regForm.subLingkupTendikPenunjang})`;
     else if (regForm.role === 'tenaga_penunjang') finalJabatan = `Tenaga Penunjang (${regForm.subLingkupTendikPenunjang})`;
 
-    const finalProdi = (isDT && !needProdiCheck) || (isTendikOrPenunjang && regForm.subLingkupTendikPenunjang === 'Rektorat') ? '-' : regForm.prodi;
+    const finalProdi = showProdi && regForm.prodi ? regForm.prodi : '-';
 
     try {
       await addDoc(collection(db, "pegawai"), {
@@ -293,18 +315,18 @@ function App() {
         password: regForm.password,
         nama: regForm.nama.trim(),
         nip: regForm.nip.trim(),
-        fakultas: isTendikOrPenunjang && regForm.subLingkupTendikPenunjang === 'Rektorat' ? '' : regForm.fakultas,
+        fakultas: isRektoratScope ? '' : regForm.fakultas,
         prodi: finalProdi,
-        satker: isTendikOrPenunjang && regForm.subLingkupTendikPenunjang === 'Rektorat' ? (daftarSatker[0]?.nama || 'Rektorat UTS') : '',
+        satker: isRektoratScope ? (isDTInSatker ? regForm.satker : (daftarSatker[0]?.nama || 'Rektorat UTS')) : '',
         jabatan: finalJabatan,
         role: regForm.role,
         subJabatanDT: isDT ? regForm.subJabatanDT : '',
+        tipePenempatanDT: isDT ? regForm.tipePenempatanDT : '',
         subLingkupTendikPenunjang: isTendikOrPenunjang ? regForm.subLingkupTendikPenunjang : '',
         jatahCuti: 12,
         statusAkun: 'Pending'
       });
       alert('Pendaftaran berhasil! Akun Anda sedang menunggu persetujuan Admin.');
-      setRegForm({ nama: '', nip: '', role: 'dosen', subJabatanDT: activeJabatanList[0]?.nama || 'Rektor', subLingkupTendikPenunjang: 'Fakultas', fakultas: 'Fakultas Teknik', prodi: 'S1 Teknik Informatika', satker: 'Biro Kepegawaian & SDM', username: '', password: '' });
       setIsRegisterMode(false);
     } catch (err) {
       console.error(err);
@@ -332,8 +354,10 @@ function App() {
     e.preventDefault();
     const isDT = formPegawai.role === 'dosen_tugas_tambahan';
     const isTendikOrPenunjang = ['tenaga_kependidikan', 'tenaga_penunjang'].includes(formPegawai.role);
-    const isRektoratScope = isTendikOrPenunjang && formPegawai.subLingkupTendikPenunjang === 'Rektorat';
-    const needProdiCheck = isDT && needsProdi(formPegawai.subJabatanDT);
+    const isDTInSatker = isDT && formPegawai.tipePenempatanDT === 'Satker';
+    const isRektoratScope = (isTendikOrPenunjang && formPegawai.subLingkupTendikPenunjang === 'Rektorat') || isDTInSatker;
+    
+    const showProdi = isDT ? needsProdi(formPegawai.subJabatanDT) : (formPegawai.role === 'dosen');
 
     let finalJabatan = '';
     if (formPegawai.role === 'dosen') finalJabatan = 'Dosen (DS)';
@@ -341,7 +365,7 @@ function App() {
     else if (formPegawai.role === 'tenaga_kependidikan') finalJabatan = `Tenaga Kependidikan (${formPegawai.subLingkupTendikPenunjang})`;
     else if (formPegawai.role === 'tenaga_penunjang') finalJabatan = `Tenaga Penunjang (${formPegawai.subLingkupTendikPenunjang})`;
 
-    const finalProdi = (isDT && !needProdiCheck) || isRektoratScope ? '-' : formPegawai.prodi;
+    const finalProdi = showProdi && formPegawai.prodi ? formPegawai.prodi : '-';
     const uname = formPegawai.username.trim().toLowerCase();
 
     const dataPayload = {
@@ -351,10 +375,11 @@ function App() {
       nip: formPegawai.nip.trim(),
       fakultas: isRektoratScope ? '' : formPegawai.fakultas,
       prodi: finalProdi,
-      satker: isRektoratScope ? formPegawai.satker : '',
+      satker: isRektoratScope ? (isDTInSatker ? formPegawai.satker : (daftarSatker[0]?.nama || 'Rektorat UTS')) : '',
       jabatan: finalJabatan,
       role: formPegawai.role,
       subJabatanDT: isDT ? formPegawai.subJabatanDT : '',
+      tipePenempatanDT: isDT ? formPegawai.tipePenempatanDT : '',
       subLingkupTendikPenunjang: isTendikOrPenunjang ? formPegawai.subLingkupTendikPenunjang : '',
       jatahCuti: formPegawai.jatahCuti,
       statusAkun: 'Aktif'
@@ -370,8 +395,8 @@ function App() {
       }
       setFormPegawai({
         docId: '', nama: '', nip: '', username: '', password: '', jabatan: '', kategoriUnit: 'Fakultas',
-        fakultas: daftarFakultas[0]?.nama || 'Fakultas Teknik', prodi: daftarProdi[0]?.nama || 'S1 Teknik Informatika',
-        satker: daftarSatker[0]?.nama || 'Biro Kepegawaian & SDM', role: 'dosen', subJabatanDT: activeJabatanList[0]?.nama || 'Rektor', subLingkupTendikPenunjang: 'Fakultas', jatahCuti: 12
+        fakultas: daftarFakultas[0]?.nama || '', prodi: daftarProdi[0]?.nama || '',
+        satker: daftarSatker[0]?.nama || '', role: 'dosen', subJabatanDT: activeJabatanList[0]?.nama || 'Rektor', tipePenempatanDT: 'Fakultas', subLingkupTendikPenunjang: 'Fakultas', jatahCuti: 12
       });
     } catch (err) {
       console.error(err);
@@ -670,7 +695,6 @@ function App() {
                 <input type="text" value={regForm.nip} onChange={(e) => setRegForm({...regForm, nip: e.target.value})} placeholder="NIP..." className="form-input" required />
               </div>
 
-              {/* Kategori / Jabatan Pegawai dipindah ke paling atas agar user memilih terlebih dahulu */}
               <div className="form-group" style={{ backgroundColor: '#f8fafc', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
                 <label className="form-label" style={{ color: '#0f172a', fontWeight: 'bold' }}>1. Kategori / Jabatan Pegawai</label>
                 <select value={regForm.role} onChange={(e) => setRegForm({...regForm, role: e.target.value})} className="form-input">
@@ -681,7 +705,6 @@ function App() {
                 </select>
               </div>
 
-              {/* Sub-Jabatan Dosen DT */}
               {regForm.role === 'dosen_tugas_tambahan' && (
                 <div className="form-group" style={{ backgroundColor: '#f0f9ff', padding: '10px', borderRadius: '6px', border: '1px solid #bae6fd' }}>
                   <label className="form-label" style={{ color: '#0369a1', fontWeight: 'bold' }}>Pilih Posisi Tugas Tambahan (DT):</label>
@@ -691,7 +714,17 @@ function App() {
                 </div>
               )}
 
-              {/* Lingkup Penempatan Tendik / Penunjang */}
+              {/* Opsi penempatan khusus DT: Apakah di Fakultas atau Satuan Kerja/Biro */}
+              {regForm.role === 'dosen_tugas_tambahan' && (
+                <div className="form-group">
+                  <label className="form-label">Penempatan Berdasarkan</label>
+                  <select value={regForm.tipePenempatanDT} onChange={(e) => setRegForm({...regForm, tipePenempatanDT: e.target.value})} className="form-input">
+                    <option value="Fakultas">Fakultas</option>
+                    <option value="Satker">Satuan Kerja / Biro</option>
+                  </select>
+                </div>
+              )}
+
               {['tenaga_kependidikan', 'tenaga_penunjang'].includes(regForm.role) && (
                 <div className="form-group">
                   <label className="form-label">Lingkup Penempatan</label>
@@ -702,32 +735,40 @@ function App() {
                 </div>
               )}
 
-              {/* Fakultas */}
-              {!(['tenaga_kependidikan', 'tenaga_penunjang'].includes(regForm.role) && regForm.subLingkupTendikPenunjang === 'Rektorat') && (
+              {/* Fakultas / Satuan Kerja / Biro */}
+              {!( (['tenaga_kependidikan', 'tenaga_penunjang'].includes(regForm.role) && regForm.subLingkupTendikPenunjang === 'Rektorat') || (regForm.role === 'dosen_tugas_tambahan' && regForm.tipePenempatanDT === 'Satker') ) && (
                 <div className="form-group">
                   <label className="form-label">Fakultas Tempat Bertugas</label>
-                  <select value={regForm.fakultas} onChange={(e) => setRegForm({...regForm, fakultas: e.target.value})} className="form-input">
+                  <select 
+                    value={regForm.fakultas} 
+                    onChange={(e) => {
+                      const selectedFak = e.target.value;
+                      const firstProdiOfFak = daftarProdi.find(p => p.fakultas === selectedFak)?.nama || '';
+                      setRegForm({...regForm, fakultas: selectedFak, prodi: firstProdiOfFak});
+                    }} 
+                    className="form-input"
+                  >
                     {daftarFakultas.map(f => <option key={f.docId} value={f.nama}>{f.nama}</option>)}
                   </select>
                 </div>
               )}
 
-              {/* Program Studi */}
-              {!(regForm.role === 'dosen_tugas_tambahan' && !needsProdi(regForm.subJabatanDT)) && !(['tenaga_kependidikan', 'tenaga_penunjang'].includes(regForm.role) && regForm.subLingkupTendikPenunjang === 'Rektorat') && (
+              {/* Satuan Kerja / Biro (Muncul jika Tendik/Penunjang di Rektorat ATAU Dosen DT memilih tipe penempatan Satker) */}
+              { ( (['tenaga_kependidikan', 'tenaga_penunjang'].includes(regForm.role) && regForm.subLingkupTendikPenunjang === 'Rektorat') || (regForm.role === 'dosen_tugas_tambahan' && regForm.tipePenempatanDT === 'Satker') ) && (
                 <div className="form-group">
-                  <label className="form-label">Program Studi</label>
-                  <select value={regForm.prodi} onChange={(e) => setRegForm({...regForm, prodi: e.target.value})} className="form-input">
-                    {daftarProdi.filter(p => p.fakultas === regForm.fakultas).map(p => <option key={p.docId} value={p.nama}>{p.nama}</option>)}
+                  <label className="form-label">Satuan Kerja / Biro</label>
+                  <select value={regForm.satker} onChange={(e) => setRegForm({...regForm, satker: e.target.value})} className="form-input">
+                    {daftarSatker.map(s => <option key={s.docId} value={s.nama}>{s.nama}</option>)}
                   </select>
                 </div>
               )}
 
-              {/* Satker */}
-              {['tenaga_kependidikan', 'tenaga_penunjang'].includes(regForm.role) && regForm.subLingkupTendikPenunjang === 'Rektorat' && (
+              {/* Program Studi */}
+              {((regForm.role === 'dosen') || (regForm.role === 'dosen_tugas_tambahan' && needsProdi(regForm.subJabatanDT))) && regForm.tipePenempatanDT !== 'Satker' && (
                 <div className="form-group">
-                  <label className="form-label">Satuan Kerja / Biro Rektorat</label>
-                  <select value={regForm.satker} onChange={(e) => setRegForm({...regForm, satker: e.target.value})} className="form-input">
-                    {daftarSatker.map(s => <option key={s.docId} value={s.nama}>{s.nama}</option>)}
+                  <label className="form-label">Program Studi</label>
+                  <select value={regForm.prodi} onChange={(e) => setRegForm({...regForm, prodi: e.target.value})} className="form-input">
+                    {daftarProdi.filter(p => p.fakultas === regForm.fakultas).map(p => <option key={p.docId} value={p.nama}>{p.nama}</option>)}
                   </select>
                 </div>
               )}
@@ -1276,7 +1317,6 @@ function App() {
                     <input type="password" value={formPegawai.password} onChange={(e)=>setFormPegawai({...formPegawai, password:e.target.value})} placeholder="Password..." className="form-input" required />
                   </div>
 
-                  {/* Kategori / Jabatan dipindah ke atas */}
                   <div className="form-group" style={{ backgroundColor: '#f8fafc', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
                     <label className="form-label" style={{ color: '#0f172a', fontWeight: 'bold' }}>Pilih Jabatan / Role Akses</label>
                     <select value={formPegawai.role} onChange={(e)=>setFormPegawai({...formPegawai, role:e.target.value})} className="form-input">
@@ -1297,7 +1337,16 @@ function App() {
                     </div>
                   )}
 
-                  {/* Lingkup Penempatan Tendik / Penunjang */}
+                  {formPegawai.role === 'dosen_tugas_tambahan' && (
+                    <div className="form-group">
+                      <label className="form-label">Penempatan Berdasarkan</label>
+                      <select value={formPegawai.tipePenempatanDT} onChange={(e) => setFormPegawai({...formPegawai, tipePenempatanDT: e.target.value})} className="form-input">
+                        <option value="Fakultas">Fakultas</option>
+                        <option value="Satker">Satuan Kerja / Biro</option>
+                      </select>
+                    </div>
+                  )}
+
                   {['tenaga_kependidikan', 'tenaga_penunjang'].includes(formPegawai.role) && (
                     <div className="form-group">
                       <label className="form-label">Lingkup Penempatan</label>
@@ -1308,32 +1357,38 @@ function App() {
                     </div>
                   )}
 
-                  {/* Fakultas */}
-                  {!(['tenaga_kependidikan', 'tenaga_penunjang'].includes(formPegawai.role) && formPegawai.subLingkupTendikPenunjang === 'Rektorat') && (
+                  {/* Fakultas / Satuan Kerja / Biro */}
+                  {!( (['tenaga_kependidikan', 'tenaga_penunjang'].includes(formPegawai.role) && formPegawai.subLingkupTendikPenunjang === 'Rektorat') || (formPegawai.role === 'dosen_tugas_tambahan' && formPegawai.tipePenempatanDT === 'Satker') ) && (
                     <div className="form-group">
                       <label className="form-label">Fakultas</label>
-                      <select value={formPegawai.fakultas} onChange={(e) => setFormPegawai({...formPegawai, fakultas: e.target.value})} className="form-input">
+                      <select 
+                        value={formPegawai.fakultas} 
+                        onChange={(e) => {
+                          const selectedFak = e.target.value;
+                          const firstProdiOfFak = daftarProdi.find(p => p.fakultas === selectedFak)?.nama || '';
+                          setFormPegawai({...formPegawai, fakultas: selectedFak, prodi: firstProdiOfFak});
+                        }} 
+                        className="form-input"
+                      >
                         {daftarFakultas.map(f => <option key={f.docId} value={f.nama}>{f.nama}</option>)}
                       </select>
                     </div>
                   )}
 
-                  {/* Program Studi */}
-                  {!(formPegawai.role === 'dosen_tugas_tambahan' && !needsProdi(formPegawai.subJabatanDT)) && !(['tenaga_kependidikan', 'tenaga_penunjang'].includes(formPegawai.role) && formPegawai.subLingkupTendikPenunjang === 'Rektorat') && (
+                  { ( (['tenaga_kependidikan', 'tenaga_penunjang'].includes(formPegawai.role) && formPegawai.subLingkupTendikPenunjang === 'Rektorat') || (formPegawai.role === 'dosen_tugas_tambahan' && formPegawai.tipePenempatanDT === 'Satker') ) && (
                     <div className="form-group">
-                      <label className="form-label">Program Studi</label>
-                      <select value={formPegawai.prodi} onChange={(e) => setFormPegawai({...formPegawai, prodi: e.target.value})} className="form-input">
-                        {daftarProdi.filter(p => p.fakultas === formPegawai.fakultas).map(p => <option key={p.docId} value={p.nama}>{p.nama}</option>)}
+                      <label className="form-label">Satuan Kerja / Biro</label>
+                      <select value={formPegawai.satker} onChange={(e) => setFormPegawai({...formPegawai, satker: e.target.value})} className="form-input">
+                        {daftarSatker.map(s => <option key={s.docId} value={s.nama}>{s.nama}</option>)}
                       </select>
                     </div>
                   )}
 
-                  {/* Satker */}
-                  {['tenaga_kependidikan', 'tenaga_penunjang'].includes(formPegawai.role) && formPegawai.subLingkupTendikPenunjang === 'Rektorat' && (
+                  {((formPegawai.role === 'dosen') || (formPegawai.role === 'dosen_tugas_tambahan' && needsProdi(formPegawai.subJabatanDT))) && formPegawai.tipePenempatanDT !== 'Satker' && (
                     <div className="form-group">
-                      <label className="form-label">Satuan Kerja / Biro Rektorat</label>
-                      <select value={formPegawai.satker} onChange={(e) => setFormPegawai({...formPegawai, satker: e.target.value})} className="form-input">
-                        {daftarSatker.map(s => <option key={s.docId} value={s.nama}>{s.nama}</option>)}
+                      <label className="form-label">Program Studi</label>
+                      <select value={formPegawai.prodi} onChange={(e) => setFormPegawai({...formPegawai, prodi: e.target.value})} className="form-input">
+                        {daftarProdi.filter(p => p.fakultas === formPegawai.fakultas).map(p => <option key={p.docId} value={p.nama}>{p.nama}</option>)}
                       </select>
                     </div>
                   )}
@@ -1365,7 +1420,23 @@ function App() {
                             {p.statusAkun === 'Pending' ? (
                               <button onClick={() => handleApprovePegawai(p.docId)} style={{ ...styles.btnAction, backgroundColor: '#059669' }}>Approve</button>
                             ) : (
-                              <button onClick={() => setFormPegawai({ docId: p.docId, nama: p.nama, nip: p.nip, username: p.username || '', password: p.password || '', jabatan: p.jabatan, kategoriUnit: p.satker ? 'Satker' : 'Fakultas', fakultas: p.fakultas || daftarFakultas[0]?.nama, prodi: p.prodi === '-' ? (daftarProdi[0]?.nama || '') : (p.prodi || daftarProdi[0]?.nama), satker: p.satker || daftarSatker[0]?.nama, role: p.role || 'dosen', subJabatanDT: p.subJabatanDT || activeJabatanList[0]?.nama || 'Rektor', subLingkupTendikPenunjang: p.subLingkupTendikPenunjang || 'Fakultas', jatahCuti: p.jatahCuti })} style={{ ...styles.btnAction, backgroundColor: '#0284c7' }}>Edit</button>
+                              <button onClick={() => setFormPegawai({ 
+                                docId: p.docId, 
+                                nama: p.nama, 
+                                nip: p.nip, 
+                                username: p.username || '', 
+                                password: p.password || '', 
+                                jabatan: p.jabatan, 
+                                kategoriUnit: p.satker ? 'Satker' : 'Fakultas', 
+                                fakultas: p.fakultas || (daftarFakultas[0]?.nama || ''), 
+                                prodi: p.prodi === '-' ? (daftarProdi[0]?.nama || '') : (p.prodi || (daftarProdi[0]?.nama || '')), 
+                                satker: p.satker || (daftarSatker[0]?.nama || ''), 
+                                role: p.role || 'dosen', 
+                                subJabatanDT: p.subJabatanDT || activeJabatanList[0]?.nama || 'Rektor', 
+                                tipePenempatanDT: p.satker ? 'Satker' : 'Fakultas', 
+                                subLingkupTendikPenunjang: p.subLingkupTendikPenunjang || 'Fakultas', 
+                                jatahCuti: p.jatahCuti 
+                              })} style={{ ...styles.btnAction, backgroundColor: '#0284c7' }}>Edit</button>
                             )}
                             {!['admin', 'rektor'].includes(p.username) && (
                               <button onClick={() => handleDeletePegawai(p.docId, p.username)} className="btn-danger"><i className="fa-solid fa-trash"></i></button>
