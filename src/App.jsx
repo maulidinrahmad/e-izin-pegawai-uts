@@ -268,7 +268,7 @@ function App() {
       return 'Menunggu Persetujuan Kaprodi';
     }
 
-    if (role === 'dosen_tugas_tambahan' || role === 'tenaga_kependidikan_dengan_jabatan') {
+    if (role === 'dosen_tugas_tambahan') {
       if (penempatan === 'Fakultas' || (!userObj.satker || userObj.satker === '-')) {
         if (subJabatan === 'Kaprodi' || jabatan.includes('Kaprodi')) return 'Menunggu Persetujuan Dekan';
         if (subJabatan === 'Sekretaris Prodi' || jabatan.includes('Sekretaris Prodi')) return 'Menunggu Persetujuan Dekan';
@@ -279,6 +279,15 @@ function App() {
         if (subJabatan === 'Warek I' || subJabatan === 'Rektor' || jabatan.includes('Warek') || jabatan.includes('Rektor')) return 'Menunggu Persetujuan Rektor';
         if (jabatan.includes('Direktur') || jabatan.includes('Kepala')) return 'Menunggu Persetujuan Warek I';
         return `Menunggu Persetujuan Pimpinan Satker (${userObj.satker})`;
+      }
+    }
+
+    // Tenaga Kependidikan dengan Jabatan -> Disetujui oleh Warek II
+    if (role === 'tenaga_kependidikan_dengan_jabatan') {
+      if (penempatan === 'Fakultas' || (!userObj.satker || userObj.satker === '-')) {
+        return 'Menunggu Persetujuan Dekan';
+      } else {
+        return 'Menunggu Persetujuan Warek II';
       }
     }
 
@@ -310,7 +319,12 @@ function App() {
     }
 
     if (currentUser.subJabatanDT === 'Warek I' || currentUser.jabatan?.includes('Warek I') || currentUser.jabatan?.includes('Warek 1')) {
-      return riwayatIzin.filter(i => i.status === 'Menunggu Persetujuan Warek I' || i.status === 'Menunggu Persetujuan Warek 1' || i.status.includes('Warek'));
+      return riwayatIzin.filter(i => i.status === 'Menunggu Persetujuan Warek I' || i.status === 'Menunggu Persetujuan Warek 1' || i.status.includes('Warek I'));
+    }
+
+    // WAREK II: Menangkap izin dari Tenaga Kependidikan dengan Jabatan
+    if (currentUser.subJabatanDT === 'Warek II' || currentUser.jabatan?.includes('Warek II') || currentUser.jabatan?.includes('Warek 2')) {
+      return riwayatIzin.filter(i => i.status === 'Menunggu Persetujuan Warek II' || i.status === 'Menunggu Persetujuan Warek 2' || i.status.includes('Warek II'));
     }
 
     if (currentUser.subJabatanDT === 'Kaprodi' || currentUser.jabatan === 'Kaprodi') {
@@ -1243,7 +1257,8 @@ function App() {
                 {currentUser.subJabatanDT === 'Kaprodi' && `Menampilkan pengajuan khusus dari Dosen di ${currentUser.prodi}.`}
                 {currentUser.subJabatanDT === 'Dekan' && `Menampilkan pengajuan khusus dari Kaprodi/Tendik di ${currentUser.fakultas}.`}
                 {(currentUser.subJabatanDT === 'Rektor' || currentUser.jabatan === 'Rektor') && `Menampilkan khusus pengajuan yang memerlukan persetujuan langsung Rektor.`}
-                {currentUser.satker && !currentUser.jabatan?.includes('Rektor') && `Menampilkan pengajuan khusus dari pegawai di Satker / Biro ${currentUser.satker}.`}
+                {currentUser.subJabatanDT === 'Warek II' && `Menampilkan pengajuan khusus dari Tenaga Kependidikan dengan Jabatan.`}
+                {currentUser.satker && !currentUser.jabatan?.includes('Rektor') && !currentUser.jabatan?.includes('Warek II') && `Menampilkan pengajuan khusus dari pegawai di Satker / Biro ${currentUser.satker}.`}
               </p>
               <table className="table-style">
                 <thead>
