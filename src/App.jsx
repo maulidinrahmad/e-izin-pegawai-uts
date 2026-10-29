@@ -118,7 +118,6 @@ function App() {
 
   // ================= AUTOMASI RESET TAHUNAN & SYNC REAL-TIME =================
   useEffect(() => {
-    // Cek automasi reset jatah cuti setiap tanggal 1 Januari tahun baru
     const cekDanResetTahunBaru = async (pegawaiSnapshot) => {
       const tahunSekarang = new Date().getFullYear();
       const lastResetYear = localStorage.getItem('last_cuti_reset_year');
@@ -133,7 +132,6 @@ function App() {
           });
           await Promise.all(updatePromises);
           localStorage.setItem('last_cuti_reset_year', String(tahunSekarang));
-          console.log(`Automasi: Jatah cuti berhasil di-reset untuk tahun ${tahunSekarang}`);
         } catch (err) {
           console.error("Gagal melakukan reset cuti otomatis:", err);
         }
@@ -180,8 +178,7 @@ function App() {
     });
 
     const unsubPegawai = onSnapshot(collection(db, "pegawai"), (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
-      setDaftarPegawai(data);
+      setDaftarPegawai(snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() })));
       cekDanResetTahunBaru(snapshot);
     });
 
@@ -263,12 +260,14 @@ function App() {
     const subJabatan = userObj.subJabatanDT || '';
     const jabatan = userObj.jabatan || '';
     const penempatan = userObj.tipePenempatanDT || userObj.subLingkupTendikPenunjang || (userObj.satker ? 'Rektorat' : 'Fakultas');
+    const satkerName = (userObj.satker || '').toLowerCase();
 
     if (role === 'dosen') {
       return 'Menunggu Persetujuan Kaprodi';
     }
 
-    if (role === 'dosen_tugas_tambahan') {
+    // Dosen Tugas Tambahan (DT) & Tenaga Kependidikan dengan Jabatan
+    if (role === 'dosen_tugas_tambahan' || role === 'tenaga_kependidikan_dengan_jabatan') {
       if (penempatan === 'Fakultas' || (!userObj.satker || userObj.satker === '-')) {
         if (subJabatan === 'Kaprodi' || jabatan.includes('Kaprodi')) return 'Menunggu Persetujuan Dekan';
         if (subJabatan === 'Sekretaris Prodi' || jabatan.includes('Sekretaris Prodi')) return 'Menunggu Persetujuan Dekan';
@@ -276,18 +275,26 @@ function App() {
         if (subJabatan === 'Wakil Dekan' || jabatan.includes('Wakil Dekan')) return 'Menunggu Persetujuan Dekan';
         return 'Menunggu Persetujuan Dekan';
       } else {
-        if (subJabatan === 'Warek I' || subJabatan === 'Rektor' || jabatan.includes('Warek') || jabatan.includes('Rektor')) return 'Menunggu Persetujuan Rektor';
-        if (jabatan.includes('Direktur') || jabatan.includes('Kepala')) return 'Menunggu Persetujuan Warek I';
-        return `Menunggu Persetujuan Pimpinan Satker (${userObj.satker})`;
-      }
-    }
+        if (subJabatan === 'Warek I' || subJabatan === 'Warek II' || subJabatan === 'Warek III' || subJabatan === 'Warek IV' || subJabatan === 'Rektor' || jabatan.includes('Warek') || jabatan.includes('Rektor')) {
+          return 'Menunggu Persetujuan Rektor';
+        }
 
-    // Tenaga Kependidikan dengan Jabatan -> Disetujui oleh Warek II
-    if (role === 'tenaga_kependidikan_dengan_jabatan') {
-      if (penempatan === 'Fakultas' || (!userObj.satker || userObj.satker === '-')) {
-        return 'Menunggu Persetujuan Dekan';
-      } else {
-        return 'Menunggu Persetujuan Warek II';
+        // Penentuan berdasarkan Direktorat/Satker khusus
+        if (satkerName.includes('sdm') || satkerName.includes('akademik') || satkerName.includes('kemahasiswaan')) {
+          return 'Menunggu Persetujuan Warek I';
+        }
+        if (satkerName.includes('keuangan') || satkerName.includes('fasilitas') || satkerName.includes('prasarana')) {
+          return 'Menunggu Persetujuan Warek II';
+        }
+        if (satkerName.includes('pkm') || satkerName.includes('riset') || satkerName.includes('penerapan riset')) {
+          return 'Menunggu Persetujuan Warek III';
+        }
+        if (satkerName.includes('kerjasama')) {
+          return 'Menunggu Persetujuan Warek IV';
+        }
+
+        // Default fallback satker lain
+        return `Menunggu Persetujuan Pimpinan Satker (${userObj.satker})`;
       }
     }
 
@@ -322,9 +329,16 @@ function App() {
       return riwayatIzin.filter(i => i.status === 'Menunggu Persetujuan Warek I' || i.status === 'Menunggu Persetujuan Warek 1' || i.status.includes('Warek I'));
     }
 
-    // WAREK II: Menangkap izin dari Tenaga Kependidikan dengan Jabatan
     if (currentUser.subJabatanDT === 'Warek II' || currentUser.jabatan?.includes('Warek II') || currentUser.jabatan?.includes('Warek 2')) {
       return riwayatIzin.filter(i => i.status === 'Menunggu Persetujuan Warek II' || i.status === 'Menunggu Persetujuan Warek 2' || i.status.includes('Warek II'));
+    }
+
+    if (currentUser.subJabatanDT === 'Warek III' || currentUser.jabatan?.includes('Warek III') || currentUser.jabatan?.includes('Warek 3')) {
+      return riwayatIzin.filter(i => i.status === 'Menunggu Persetujuan Warek III' || i.status === 'Menunggu Persetujuan Warek 3' || i.status.includes('Warek III'));
+    }
+
+    if (currentUser.subJabatanDT === 'Warek IV' || currentUser.jabatan?.includes('Warek IV') || currentUser.jabatan?.includes('Warek 4')) {
+      return riwayatIzin.filter(i => i.status === 'Menunggu Persetujuan Warek IV' || i.status === 'Menunggu Persetujuan Warek 4' || i.status.includes('Warek IV'));
     }
 
     if (currentUser.subJabatanDT === 'Kaprodi' || currentUser.jabatan === 'Kaprodi') {
@@ -348,7 +362,7 @@ function App() {
   const getRiwayatForCurrentUser = () => {
     if (!currentUser) return [];
     if (currentUser.role === 'admin' || currentUser.subJabatanDT === 'Rektor' || currentUser.jabatan === 'Rektor') return riwayatIzin;
-    if (currentUser.subJabatanDT === 'Warek I' || currentUser.jabatan?.includes('Warek')) return riwayatIzin;
+    if (currentUser.subJabatanDT?.includes('Warek') || currentUser.jabatan?.includes('Warek')) return riwayatIzin;
     if (currentUser.subJabatanDT === 'Dekan' || currentUser.jabatan === 'Dekan') return riwayatIzin.filter(i => i.fakultas === currentUser.fakultas);
     if (currentUser.subJabatanDT === 'Kaprodi' || currentUser.jabatan === 'Kaprodi') return riwayatIzin.filter(i => i.prodi === currentUser.prodi);
     if (currentUser.satker && (currentUser.jabatan?.includes('Direktur') || currentUser.jabatan?.includes('Kepala'))) return riwayatIzin.filter(i => i.satker === currentUser.satker);
@@ -755,8 +769,7 @@ function App() {
         <div style={{ ...styles.loginCard, position: 'relative', zIndex: 2, backgroundColor: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(8px)', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)' }}>
           <div style={{ textAlign: 'center', marginBottom: '20px' }}>
             <img src={logoUTS} alt="Logo UTS" style={{ width: '75px', height: '75px', objectFit: 'contain', marginBottom: '10px' }} />
-            <h2 style={{ fontSize: '20px', color: '#1e293b' }}>PASTI</h2>
-            <p style={{ color: '#666', fontSize: '13px', marginTop: '5px' }}>(Pelayanan Ajuan Sistem Izin & Cuti) </p>
+            <h2 style={{ fontSize: '20px', color: '#1e293b' }}>E-Izin & Cuti Pegawai UTS</h2>
             <p style={{ color: '#666', fontSize: '13px', marginTop: '5px' }}>Universitas Teknologi Sumbawa (UTS)</p>
           </div>
 
@@ -825,7 +838,7 @@ function App() {
                   <label className="form-label">Penempatan Berdasarkan</label>
                   <select value={regForm.tipePenempatanDT} onChange={(e) => setRegForm({...regForm, tipePenempatanDT: e.target.value})} className="form-input">
                     <option value="Fakultas">Fakultas</option>
-                    <option value="Satker">Satuan Kerja / Biro</option>
+                    <option value="Satker">Satuan Kerja / Direktorat</option>
                   </select>
                 </div>
               )}
@@ -859,7 +872,7 @@ function App() {
 
               { ( (['tenaga_kependidikan_non_jabatan', 'tenaga_penunjang'].includes(regForm.role) && regForm.subLingkupTendikPenunjang === 'Rektorat') || (['dosen_tugas_tambahan', 'tenaga_kependidikan_dengan_jabatan'].includes(regForm.role) && regForm.tipePenempatanDT === 'Satker') ) && (
                 <div className="form-group">
-                  <label className="form-label">Satuan Kerja / Biro</label>
+                  <label className="form-label">Satuan Kerja / Direktorat</label>
                   <select value={regForm.satker} onChange={(e) => setRegForm({...regForm, satker: e.target.value})} className="form-input">
                     {daftarSatker.map(s => <option key={s.docId} value={s.nama}>{s.nama}</option>)}
                   </select>
@@ -908,8 +921,8 @@ function App() {
       <aside className={`sidebar ${isSidebarOpen ? 'sidebar-open' : ''}`}>
         <div className="brand">
           <img src={logoUTS} alt="Logo UTS" style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
-          <span>PASTI <br></br>(Pelayanan Ajuan Sistem Izin & Cuti) </span>
-          </div>
+          <span>E-Izin & Cuti UTS</span>
+        </div>
         <ul className="menu-list">
           <li className={activeMenu === 'dashboard' ? 'menu-item menu-active' : 'menu-item'} onClick={() => handleMenuClick('dashboard')}>
             <i className="fa-solid fa-chart-line icon-menu"></i> Dashboard
@@ -1033,7 +1046,7 @@ function App() {
                         <option value="Semua">Tampilkan Semua Unit</option>
                         <option value="Fakultas">Filter per Fakultas</option>
                         <option value="Prodi">Filter per Program Studi</option>
-                        <option value="Satker">Filter per Satuan Kerja / Biro</option>
+                        <option value="Satker">Filter per Direktorat / Satker</option>
                       </select>
                     </div>
                     {filterRektorKategori === 'Fakultas' && (
@@ -1056,7 +1069,7 @@ function App() {
                     )}
                     {filterRektorKategori === 'Satker' && (
                       <div>
-                        <label className="form-label">Pilih Satuan Kerja:</label>
+                        <label className="form-label">Pilih Direktorat / Satker:</label>
                         <select value={filterRektorNilai} onChange={(e) => setFilterRektorNilai(e.target.value)} className="form-input" style={{ padding: '6px 12px', fontSize: '13px' }}>
                           <option value="">-- Semua Satker --</option>
                           {daftarSatker.map(s => <option key={s.docId} value={s.nama}>{s.nama}</option>)}
@@ -1258,8 +1271,11 @@ function App() {
                 {currentUser.subJabatanDT === 'Kaprodi' && `Menampilkan pengajuan khusus dari Dosen di ${currentUser.prodi}.`}
                 {currentUser.subJabatanDT === 'Dekan' && `Menampilkan pengajuan khusus dari Kaprodi/Tendik di ${currentUser.fakultas}.`}
                 {(currentUser.subJabatanDT === 'Rektor' || currentUser.jabatan === 'Rektor') && `Menampilkan khusus pengajuan yang memerlukan persetujuan langsung Rektor.`}
-                {currentUser.subJabatanDT === 'Warek II' && `Menampilkan pengajuan khusus dari Tenaga Kependidikan dengan Jabatan.`}
-                {currentUser.satker && !currentUser.jabatan?.includes('Rektor') && !currentUser.jabatan?.includes('Warek II') && `Menampilkan pengajuan khusus dari pegawai di Satker / Biro ${currentUser.satker}.`}
+                {currentUser.subJabatanDT === 'Warek I' && `Menampilkan pengajuan dari Dosen DT/Tendik Berjabatan di Direktorat SDM, Akademik & Kemahasiswaan.`}
+                {currentUser.subJabatanDT === 'Warek II' && `Menampilkan pengajuan dari Dosen DT/Tendik Berjabatan di Direktorat Keuangan & Pengelolaan Fasilitas & Prasarana.`}
+                {currentUser.subJabatanDT === 'Warek III' && `Menampilkan pengajuan dari Dosen DT/Tendik Berjabatan di Direktorat PKM & Penerapan Riset.`}
+                {currentUser.subJabatanDT === 'Warek IV' && `Menampilkan pengajuan dari Dosen DT/Tendik Berjabatan di Direktorat Kerjasama.`}
+                {currentUser.satker && !currentUser.jabatan?.includes('Rektor') && !currentUser.jabatan?.includes('Warek') && `Menampilkan pengajuan khusus dari pegawai di Satker / Direktorat ${currentUser.satker}.`}
               </p>
               <table className="table-style">
                 <thead>
@@ -1393,9 +1409,9 @@ function App() {
                 </div>
 
                 <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px' }}>
-                  <h4>Satuan Kerja / Biro</h4>
+                  <h4>Satuan Kerja / Direktorat</h4>
                   <form onSubmit={handleAddSatker} style={{ marginBottom: '15px', display: 'flex', gap: '8px' }}>
-                    <input type="text" value={inputSatker} onChange={(e) => setInputSatker(e.target.value)} placeholder="Satker..." className="form-input" required />
+                    <input type="text" value={inputSatker} onChange={(e) => setInputSatker(e.target.value)} placeholder="Satker / Direktorat..." className="form-input" required />
                     <button type="submit" style={{ backgroundColor: '#059669', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Tambah</button>
                   </form>
                   <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
@@ -1459,7 +1475,7 @@ function App() {
                       <label className="form-label">Penempatan Berdasarkan</label>
                       <select value={formPegawai.tipePenempatanDT} onChange={(e) => setFormPegawai({...formPegawai, tipePenempatanDT: e.target.value})} className="form-input">
                         <option value="Fakultas">Fakultas</option>
-                        <option value="Satker">Satuan Kerja / Biro</option>
+                        <option value="Satker">Satuan Kerja / Direktorat</option>
                       </select>
                     </div>
                   )}
@@ -1493,7 +1509,7 @@ function App() {
 
                   { ( (['tenaga_kependidikan_non_jabatan', 'tenaga_penunjang'].includes(formPegawai.role) && formPegawai.subLingkupTendikPenunjang === 'Rektorat') || (['dosen_tugas_tambahan', 'tenaga_kependidikan_dengan_jabatan'].includes(formPegawai.role) && formPegawai.tipePenempatanDT === 'Satker') ) && (
                     <div className="form-group">
-                      <label className="form-label">Satuan Kerja / Biro</label>
+                      <label className="form-label">Satuan Kerja / Direktorat</label>
                       <select value={formPegawai.satker} onChange={(e) => setFormPegawai({...formPegawai, satker: e.target.value})} className="form-input">
                         {daftarSatker.map(s => <option key={s.docId} value={s.nama}>{s.nama}</option>)}
                       </select>
