@@ -46,7 +46,7 @@ function App() {
     { docId: 'def-7', nama: 'Wakil Dekan' },
     { docId: 'def-8', nama: 'Kaprodi' },
     { docId: 'def-9', nama: 'Sekretaris Prodi' },
-    { docId: 'def-10', nama: 'Direktur SDM' },
+    { docId: 'def-10', nama: 'Direktur Sumber Daya Manusia' },
     { docId: 'def-11', nama: 'Direktur DPPF' }
   ];
 
@@ -188,12 +188,12 @@ function App() {
       });
       await addDoc(collection(db, "fakultas"), { id: 'FK01', nama: 'Fakultas Ilmu Sosial dan Ilmu Politik' });
       await addDoc(collection(db, "prodi"), { id: 'PR01', fakultas: 'Fakultas Ilmu Sosial dan Ilmu Politik', nama: 'Ilmu Administrasi Negara' });
-      await addDoc(collection(db, "satker"), { id: 'SK01', nama: 'Direktorat SDM' });
+      await addDoc(collection(db, "satker"), { id: 'SK01', nama: 'Direktorat Sumber Daya Manusia' });
       await addDoc(collection(db, "satker"), { id: 'SK02', nama: 'Direktorat DPPF' });
       await addDoc(collection(db, "jenisIzin"), { id: 'JI01', nama: 'Sakit (Dengan / Tanpa Surat Dokter)' });
       await addDoc(collection(db, "jenisCuti"), { id: 'JC01', nama: 'Cuti Tahunan' });
       
-      const defaultJabatans = ['Rektor', 'Warek I', 'Warek II', 'Warek III', 'Warek IV', 'Dekan', 'Wakil Dekan', 'Kaprodi', 'Sekretaris Prodi', 'Direktur SDM', 'Direktur DPPF'];
+      const defaultJabatans = ['Rektor', 'Warek I', 'Warek II', 'Warek III', 'Warek IV', 'Dekan', 'Wakil Dekan', 'Kaprodi', 'Sekretaris Prodi', 'Direktur Sumber Daya Manusia', 'Direktur DPPF'];
       for (const j of defaultJabatans) {
         await addDoc(collection(db, "masterJabatan"), { nama: j });
       }
@@ -201,6 +201,21 @@ function App() {
       alert('Inisialisasi data awal berhasil!');
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  // Fungsi Reset / Hapus Seluruh Riwayat Izin & Cuti di Firestore
+  const handleResetAllRiwayat = async () => {
+    if (window.confirm('PERINGATAN: Apakah Anda yakin ingin menghapus seluruh riwayat permohonan izin dan cuti yang ada di database? Data yang dihapus tidak dapat dikembalikan.')) {
+      try {
+        const querySnapshot = await getDocs(collection(db, "riwayatIzin"));
+        const deletePromises = querySnapshot.docs.map(d => deleteDoc(doc(db, "riwayatIzin", d.id)));
+        await Promise.all(deletePromises);
+        alert('Semua riwayat izin dan cuti berhasil di-reset bersih!');
+      } catch (err) {
+        console.error(err);
+        alert('Gagal mereset riwayat.');
+      }
     }
   };
 
@@ -232,7 +247,7 @@ function App() {
       return 'Menunggu Persetujuan Kaprodi';
     }
 
-    // 2. Dosen Tugas Tambahan (DT)
+    // 2. Dosen Tugas Tambahan (DT) & Pimpinan Unit
     if (role === 'dosen_tugas_tambahan') {
       if (penempatan === 'Fakultas' || (!userObj.satker || userObj.satker === '-')) {
         if (subJabatan === 'Kaprodi' || jabatan.includes('Kaprodi')) return 'Menunggu Persetujuan Dekan';
@@ -241,8 +256,9 @@ function App() {
         if (subJabatan === 'Wakil Dekan' || jabatan.includes('Wakil Dekan')) return 'Menunggu Persetujuan Dekan';
         return 'Menunggu Persetujuan Dekan';
       } else {
-        if (subJabatan === 'Warek I' || subJabatan === 'Rektor' || jabatan.includes('Warek')) return 'Menunggu Persetujuan Rektor';
-        if (subJabatan === 'Direktur SDM' || jabatan.includes('Direktur SDM')) return 'Menunggu Persetujuan Warek 1';
+        if (subJabatan === 'Warek I' || subJabatan === 'Rektor' || jabatan.includes('Warek') || jabatan.includes('Rektor')) return 'Menunggu Persetujuan Rektor';
+        // Direktur / Kepala Biro (seperti Direktur SDM) -> Disetujui Warek I
+        if (jabatan.includes('Direktur') || jabatan.includes('Kepala')) return 'Menunggu Persetujuan Warek I';
         return `Menunggu Persetujuan Pimpinan Satker (${userObj.satker})`;
       }
     }
@@ -252,6 +268,7 @@ function App() {
       if (penempatan === 'Fakultas' || (!userObj.satker || userObj.satker === '-')) {
         return 'Menunggu Persetujuan Dekan';
       } else {
+        // Tendik/Staf di Direktorat/Satker disetujui oleh Direktur / Kepala Satker terkait
         return `Menunggu Persetujuan ${userObj.satker}`;
       }
     }
@@ -259,29 +276,34 @@ function App() {
     return 'Menunggu Persetujuan Atasan';
   };
 
-  const isApproverRole = ['kaprodi', 'dekan', 'dosen_tugas_tambahan', 'tenaga_kependidikan', 'tenaga_penunjang', 'rektor', 'warek', 'direktur'].some(r => currentUser?.role?.includes(r)) || 
+  const isApproverRole = ['kaprodi', 'dekan', 'dosen_tugas_tambahan', 'tenaga_kependidikan', 'tenaga_penunjang', 'rektor', 'warek', 'direktur', 'kepala'].some(r => currentUser?.role?.includes(r)) || 
     activeJabatanList.some(j => currentUser?.jabatan?.includes(j.nama)) || currentUser?.satker;
 
   const getPendingForCurrentUser = () => {
     if (!currentUser) return [];
     
+    // Rektor melihat semua pengajuan
     if (currentUser.subJabatanDT === 'Rektor' || currentUser.role === 'admin' || currentUser.jabatan === 'Rektor') {
       return riwayatIzin.filter(i => i.status.includes('Menunggu Persetujuan'));
     }
 
-    if (currentUser.subJabatanDT === 'Warek I' || currentUser.jabatan?.includes('Warek 1')) {
-      return riwayatIzin.filter(i => i.status === 'Menunggu Persetujuan Warek 1' || i.status.includes('Warek 1'));
+    // Warek I / Wakil Rektor melihat pengajuan yang ditujukan ke Warek I (termasuk Direktur/Kepala Biro)
+    if (currentUser.subJabatanDT === 'Warek I' || currentUser.jabatan?.includes('Warek I') || currentUser.jabatan?.includes('Warek 1')) {
+      return riwayatIzin.filter(i => i.status === 'Menunggu Persetujuan Warek I' || i.status === 'Menunggu Persetujuan Warek 1' || i.status.includes('Warek'));
     }
 
+    // Kaprodi melihat pengajuan Dosen pada prodinya
     if (currentUser.subJabatanDT === 'Kaprodi' || currentUser.jabatan === 'Kaprodi') {
       return riwayatIzin.filter(i => i.status === 'Menunggu Persetujuan Kaprodi' && i.prodi === currentUser.prodi);
     }
 
+    // Dekan melihat pengajuan Kaprodi/Sekprodi/Tendik pada fakultasnya
     if (currentUser.subJabatanDT === 'Dekan' || currentUser.jabatan === 'Dekan') {
       return riwayatIzin.filter(i => i.status === 'Menunggu Persetujuan Dekan' && i.fakultas === currentUser.fakultas);
     }
 
-    if (currentUser.satker) {
+    // Direktur / Kepala Biro melihat pengajuan pegawai pada Satker/Direktoratnya
+    if (currentUser.satker && (currentUser.jabatan?.includes('Direktur') || currentUser.jabatan?.includes('Kepala'))) {
       return riwayatIzin.filter(i => 
         i.status === `Menunggu Persetujuan ${currentUser.satker}` || 
         i.status === `Menunggu Persetujuan Pimpinan Satker (${currentUser.satker})`
@@ -293,10 +315,18 @@ function App() {
 
   const getRiwayatForCurrentUser = () => {
     if (!currentUser) return [];
+    // Rektor & Admin melihat semua
     if (currentUser.role === 'admin' || currentUser.subJabatanDT === 'Rektor' || currentUser.jabatan === 'Rektor') return riwayatIzin;
+    // Warek 1 melihat semua yang di bawah koordinasinya
+    if (currentUser.subJabatanDT === 'Warek I' || currentUser.jabatan?.includes('Warek')) return riwayatIzin;
+    // Dekan melihat fakultasnya
     if (currentUser.subJabatanDT === 'Dekan' || currentUser.jabatan === 'Dekan') return riwayatIzin.filter(i => i.fakultas === currentUser.fakultas);
+    // Kaprodi melihat prodinya
     if (currentUser.subJabatanDT === 'Kaprodi' || currentUser.jabatan === 'Kaprodi') return riwayatIzin.filter(i => i.prodi === currentUser.prodi);
-    if (currentUser.satker) return riwayatIzin.filter(i => i.satker === currentUser.satker);
+    // Direktur / Kepala Biro melihat satkernya
+    if (currentUser.satker && (currentUser.jabatan?.includes('Direktur') || currentUser.jabatan?.includes('Kepala'))) return riwayatIzin.filter(i => i.satker === currentUser.satker);
+    
+    // Staf biasa HANYA melihat riwayat miliknya sendiri
     return riwayatIzin.filter(i => i.nip === currentUser.nip);
   };
 
@@ -352,7 +382,7 @@ function App() {
     else if (regForm.role === 'tenaga_penunjang') finalJabatan = `Tenaga Penunjang (${regForm.subLingkupTendikPenunjang})`;
 
     const finalFakultas = isRektoratScope ? '' : regForm.fakultas;
-    const finalSatker = isRektoratScope ? (isDTInSatker ? regForm.satker : (daftarSatker[0]?.nama || 'Direktorat SDM')) : '';
+    const finalSatker = isRektoratScope ? (isDTInSatker ? regForm.satker : (daftarSatker[0]?.nama || 'Direktorat Sumber Daya Manusia')) : '';
     const finalProdi = showProdi && regForm.prodi ? regForm.prodi : '-';
 
     try {
@@ -412,7 +442,7 @@ function App() {
     else if (formPegawai.role === 'tenaga_penunjang') finalJabatan = `Tenaga Penunjang (${formPegawai.subLingkupTendikPenunjang})`;
 
     const finalFakultas = isRektoratScope ? '' : formPegawai.fakultas;
-    const finalSatker = isRektoratScope ? (isDTInSatker ? formPegawai.satker : (daftarSatker[0]?.nama || 'Direktorat SDM')) : '';
+    const finalSatker = isRektoratScope ? (isDTInSatker ? formPegawai.satker : (daftarSatker[0]?.nama || 'Direktorat Sumber Daya Manusia')) : '';
     const finalProdi = showProdi && formPegawai.prodi ? formPegawai.prodi : '-';
     const uname = formPegawai.username.trim().toLowerCase();
 
@@ -947,6 +977,18 @@ function App() {
                   </p>
                 </div>
               </div>
+
+              {currentUser.role === 'admin' && (
+                <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', marginTop: '20px', borderLeft: '5px solid #ef4444', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <h3 style={{ margin: 0, color: '#1e293b', fontSize: '16px' }}>Panel Pemeliharaan Sistem (Reset Data)</h3>
+                    <p style={{ margin: '4px 0 0 0', color: '#64748b', fontSize: '13px' }}>Hapus semua data riwayat permohonan izin dan cuti lama yang bermasalah.</p>
+                  </div>
+                  <button onClick={handleResetAllRiwayat} style={{ backgroundColor: '#ef4444', color: '#fff', border: 'none', padding: '10px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>
+                    <i className="fa-solid fa-trash-can"></i> Reset Semua Riwayat Izin & Cuti
+                  </button>
+                </div>
+              )}
 
               {(currentUser.subJabatanDT === 'Rektor' || currentUser.jabatan === 'Rektor') && (
                 <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', marginTop: '20px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
