@@ -204,9 +204,8 @@ function App() {
     }
   };
 
-  // Fungsi Reset / Hapus Seluruh Riwayat Izin & Cuti di Firestore
   const handleResetAllRiwayat = async () => {
-    if (window.confirm('PERINGATAN: Apakah Anda yakin ingin menghapus seluruh riwayat permohonan izin dan cuti yang ada di database? Data yang dihapus tidak dapat dikembalikan.')) {
+    if (window.confirm('PERINGATAN: Apakah Anda yakin ingin menghapus seluruh riwayat permohonan izin dan cuti yang ada di database?')) {
       try {
         const querySnapshot = await getDocs(collection(db, "riwayatIzin"));
         const deletePromises = querySnapshot.docs.map(d => deleteDoc(doc(db, "riwayatIzin", d.id)));
@@ -242,12 +241,10 @@ function App() {
     const jabatan = userObj.jabatan || '';
     const penempatan = userObj.tipePenempatanDT || userObj.subLingkupTendikPenunjang || (userObj.satker ? 'Rektorat' : 'Fakultas');
 
-    // 1. Dosen Biasa di Fakultas -> Kaprodi
     if (role === 'dosen') {
       return 'Menunggu Persetujuan Kaprodi';
     }
 
-    // 2. Dosen Tugas Tambahan (DT) & Pimpinan Unit
     if (role === 'dosen_tugas_tambahan') {
       if (penempatan === 'Fakultas' || (!userObj.satker || userObj.satker === '-')) {
         if (subJabatan === 'Kaprodi' || jabatan.includes('Kaprodi')) return 'Menunggu Persetujuan Dekan';
@@ -257,18 +254,15 @@ function App() {
         return 'Menunggu Persetujuan Dekan';
       } else {
         if (subJabatan === 'Warek I' || subJabatan === 'Rektor' || jabatan.includes('Warek') || jabatan.includes('Rektor')) return 'Menunggu Persetujuan Rektor';
-        // Direktur / Kepala Biro (seperti Direktur SDM) -> Disetujui Warek I
         if (jabatan.includes('Direktur') || jabatan.includes('Kepala')) return 'Menunggu Persetujuan Warek I';
         return `Menunggu Persetujuan Pimpinan Satker (${userObj.satker})`;
       }
     }
 
-    // 3. Tenaga Kependidikan & Tenaga Penunjang
     if (role === 'tenaga_kependidikan' || role === 'tenaga_penunjang') {
       if (penempatan === 'Fakultas' || (!userObj.satker || userObj.satker === '-')) {
         return 'Menunggu Persetujuan Dekan';
       } else {
-        // Tendik/Staf di Direktorat/Satker disetujui oleh Direktur / Kepala Satker terkait
         return `Menunggu Persetujuan ${userObj.satker}`;
       }
     }
@@ -276,33 +270,31 @@ function App() {
     return 'Menunggu Persetujuan Atasan';
   };
 
-  const isApproverRole = ['kaprodi', 'dekan', 'dosen_tugas_tambahan', 'tenaga_kependidikan', 'tenaga_penunjang', 'rektor', 'warek', 'direktur', 'kepala'].some(r => currentUser?.role?.includes(r)) || 
-    activeJabatanList.some(j => currentUser?.jabatan?.includes(j.nama)) || currentUser?.satker;
+  // Admin tidak berhak melihat menu persetujuan masuk
+  const isApproverRole = currentUser?.role !== 'admin' && (
+    ['kaprodi', 'dekan', 'dosen_tugas_tambahan', 'tenaga_kependidikan', 'tenaga_penunjang', 'rektor', 'warek', 'direktur', 'kepala'].some(r => currentUser?.role?.includes(r)) || 
+    activeJabatanList.some(j => currentUser?.jabatan?.includes(j.nama)) || currentUser?.satker
+  );
 
   const getPendingForCurrentUser = () => {
-    if (!currentUser) return [];
+    if (!currentUser || currentUser.role === 'admin') return [];
     
-    // Rektor melihat semua pengajuan
-    if (currentUser.subJabatanDT === 'Rektor' || currentUser.role === 'admin' || currentUser.jabatan === 'Rektor') {
+    if (currentUser.subJabatanDT === 'Rektor' || currentUser.jabatan === 'Rektor') {
       return riwayatIzin.filter(i => i.status.includes('Menunggu Persetujuan'));
     }
 
-    // Warek I / Wakil Rektor melihat pengajuan yang ditujukan ke Warek I (termasuk Direktur/Kepala Biro)
     if (currentUser.subJabatanDT === 'Warek I' || currentUser.jabatan?.includes('Warek I') || currentUser.jabatan?.includes('Warek 1')) {
       return riwayatIzin.filter(i => i.status === 'Menunggu Persetujuan Warek I' || i.status === 'Menunggu Persetujuan Warek 1' || i.status.includes('Warek'));
     }
 
-    // Kaprodi melihat pengajuan Dosen pada prodinya
     if (currentUser.subJabatanDT === 'Kaprodi' || currentUser.jabatan === 'Kaprodi') {
       return riwayatIzin.filter(i => i.status === 'Menunggu Persetujuan Kaprodi' && i.prodi === currentUser.prodi);
     }
 
-    // Dekan melihat pengajuan Kaprodi/Sekprodi/Tendik pada fakultasnya
     if (currentUser.subJabatanDT === 'Dekan' || currentUser.jabatan === 'Dekan') {
       return riwayatIzin.filter(i => i.status === 'Menunggu Persetujuan Dekan' && i.fakultas === currentUser.fakultas);
     }
 
-    // Direktur / Kepala Biro melihat pengajuan pegawai pada Satker/Direktoratnya
     if (currentUser.satker && (currentUser.jabatan?.includes('Direktur') || currentUser.jabatan?.includes('Kepala'))) {
       return riwayatIzin.filter(i => 
         i.status === `Menunggu Persetujuan ${currentUser.satker}` || 
@@ -315,18 +307,12 @@ function App() {
 
   const getRiwayatForCurrentUser = () => {
     if (!currentUser) return [];
-    // Rektor & Admin melihat semua
     if (currentUser.role === 'admin' || currentUser.subJabatanDT === 'Rektor' || currentUser.jabatan === 'Rektor') return riwayatIzin;
-    // Warek 1 melihat semua yang di bawah koordinasinya
     if (currentUser.subJabatanDT === 'Warek I' || currentUser.jabatan?.includes('Warek')) return riwayatIzin;
-    // Dekan melihat fakultasnya
     if (currentUser.subJabatanDT === 'Dekan' || currentUser.jabatan === 'Dekan') return riwayatIzin.filter(i => i.fakultas === currentUser.fakultas);
-    // Kaprodi melihat prodinya
     if (currentUser.subJabatanDT === 'Kaprodi' || currentUser.jabatan === 'Kaprodi') return riwayatIzin.filter(i => i.prodi === currentUser.prodi);
-    // Direktur / Kepala Biro melihat satkernya
     if (currentUser.satker && (currentUser.jabatan?.includes('Direktur') || currentUser.jabatan?.includes('Kepala'))) return riwayatIzin.filter(i => i.satker === currentUser.satker);
     
-    // Staf biasa HANYA melihat riwayat miliknya sendiri
     return riwayatIzin.filter(i => i.nip === currentUser.nip);
   };
 
@@ -896,7 +882,7 @@ function App() {
               </li>
             </>
           )}
-          {isApproverRole && (
+          {isApproverRole && currentUser.role !== 'admin' && (
             <li className={activeMenu === 'persetujuan' ? 'menu-item menu-active' : 'menu-item'} onClick={() => handleMenuClick('persetujuan')}>
               <i className="fa-solid fa-list-check icon-menu"></i> Persetujuan Masuk
               {pendingApprovalsCount > 0 && (
@@ -1124,7 +1110,7 @@ function App() {
             </div>
           )}
 
-          {activeMenu === 'ajukan-izin' && currentUser.subJabatanDT !== 'Rektor' && currentUser.jabatan !== 'Rektor' && (
+          {activeMenu === 'ajukan-izin' && currentUser.role !== 'admin' && currentUser.subJabatanDT !== 'Rektor' && currentUser.jabatan !== 'Rektor' && (
             <div className="form-container" style={{ maxWidth: '600px', margin: '0 auto' }}>
               <div style={{ borderBottom: '2px solid #f59e0b', paddingBottom: '10px', marginBottom: '15px' }}>
                 <h3 style={{ margin: 0, color: '#1e293b' }}><i className="fa-solid fa-file-pen" style={{ color: '#f59e0b', marginRight: '8px' }}></i>Formulir Permohonan Izin</h3>
@@ -1175,7 +1161,7 @@ function App() {
             </div>
           )}
 
-          {activeMenu === 'ajukan-cuti' && currentUser.subJabatanDT !== 'Rektor' && currentUser.jabatan !== 'Rektor' && (
+          {activeMenu === 'ajukan-cuti' && currentUser.role !== 'admin' && currentUser.subJabatanDT !== 'Rektor' && currentUser.jabatan !== 'Rektor' && (
             <div className="form-container" style={{ maxWidth: '600px', margin: '0 auto' }}>
               <div style={{ borderBottom: '2px solid #0284c7', paddingBottom: '10px', marginBottom: '15px' }}>
                 <h3 style={{ margin: 0, color: '#1e293b' }}><i className="fa-solid fa-umbrella-beach" style={{ color: '#0284c7', marginRight: '8px' }}></i>Formulir Permohonan Cuti</h3>
@@ -1223,7 +1209,7 @@ function App() {
             </div>
           )}
 
-          {activeMenu === 'persetujuan' && isApproverRole && (
+          {activeMenu === 'persetujuan' && isApproverRole && currentUser.role !== 'admin' && (
             <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', overflowX: 'auto' }}>
               <h3>Daftar Permohonan Masuk untuk {currentUser.jabatan}</h3>
               <p style={{ fontSize: '13px', color: '#666', marginBottom: '15px' }}>
