@@ -755,7 +755,8 @@ function App() {
         <div style={{ ...styles.loginCard, position: 'relative', zIndex: 2, backgroundColor: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(8px)', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)' }}>
           <div style={{ textAlign: 'center', marginBottom: '20px' }}>
             <img src={logoUTS} alt="Logo UTS" style={{ width: '75px', height: '75px', objectFit: 'contain', marginBottom: '10px' }} />
-            <h2 style={{ fontSize: '20px', color: '#1e293b' }}>E-Izin & Cuti Pegawai UTS</h2>
+            <h2 style={{ fontSize: '20px', color: '#1e293b' }}>PASTI</h2>
+            <p style={{ color: '#666', fontSize: '13px', marginTop: '5px' }}>(Pelayanan Ajuan Sistem Izin & Cuti) </p>
             <p style={{ color: '#666', fontSize: '13px', marginTop: '5px' }}>Universitas Teknologi Sumbawa (UTS)</p>
           </div>
 
@@ -907,8 +908,8 @@ function App() {
       <aside className={`sidebar ${isSidebarOpen ? 'sidebar-open' : ''}`}>
         <div className="brand">
           <img src={logoUTS} alt="Logo UTS" style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
-          <span>E-Izin & Cuti UTS</span>
-        </div>
+          <span>PASTI <br></br>(Pelayanan Ajuan Sistem Izin & Cuti) </span>
+          </div>
         <ul className="menu-list">
           <li className={activeMenu === 'dashboard' ? 'menu-item menu-active' : 'menu-item'} onClick={() => handleMenuClick('dashboard')}>
             <i className="fa-solid fa-chart-line icon-menu"></i> Dashboard
