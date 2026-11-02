@@ -45,46 +45,8 @@ function App() {
   const [inputBaruIzin, setInputBaruIzin] = useState('');
   const [inputBaruCuti, setInputBaruCuti] = useState('');
 
-  const [strukturKampusUTS, setStrukturKampusUTS] = useState([
-    { id: 'sk-w1', unitKerja: 'Wakil Rektor 1', jabatan: 'Wakil Rektor 1', status: 'Dosen Tugas Tambahan (DT)', approver: 'Rektor' },
-    { id: 'sk-w2', unitKerja: 'Wakil Rektor 2', jabatan: 'Wakil Rektor 2', status: 'Dosen Tugas Tambahan (DT)', approver: 'Rektor' },
-    { id: 'sk-w3', unitKerja: 'Wakil Rektor 3', jabatan: 'Wakil Rektor 3', status: 'Dosen Tugas Tambahan (DT)', approver: 'Rektor' },
-    { id: 'sk-w4', unitKerja: 'Wakil Rektor 4', jabatan: 'Wakil Rektor 4', status: 'Dosen Tugas Tambahan (DT)', approver: 'Rektor' },
-
-    { id: 'sk-feb1', unitKerja: 'Fakultas Ekonomi dan Bisnis', jabatan: 'Dekan', status: 'Dosen Tugas Tambahan (DT)', approver: 'Rektor' },
-    { id: 'sk-feb2', unitKerja: 'Fakultas Ekonomi dan Bisnis', jabatan: 'Wakil Dekan', status: 'Dosen Tugas Tambahan (DT)', approver: 'Dekan' },
-    { id: 'sk-feb3', unitKerja: 'Fakultas Ekonomi dan Bisnis', jabatan: 'Kaprodi', status: 'Dosen Tugas Tambahan (DT)', approver: 'Dekan' },
-    { id: 'sk-feb4', unitKerja: 'Fakultas Ekonomi dan Bisnis', jabatan: 'Sekretaris Prodi', status: 'Dosen Tugas Tambahan (DT)', approver: 'Dekan' },
-    { id: 'sk-feb5', unitKerja: 'Fakultas Ekonomi dan Bisnis', jabatan: 'Dosen', status: 'Dosen Biasa (DS)', approver: 'Kaprodi' },
-    { id: 'sk-feb6', unitKerja: 'Fakultas Ekonomi dan Bisnis', jabatan: 'Tenaga Kependidikan', status: 'Staf', approver: 'Dekan' },
-
-    { id: 'sk-psi1', unitKerja: 'Fakultas Psikologi', jabatan: 'Dekan', status: 'Dosen Tugas Tambahan (DT)', approver: 'Rektor' },
-    { id: 'sk-psi2', unitKerja: 'Fakultas Psikologi', jabatan: 'Wakil Dekan', status: 'Dosen Tugas Tambahan (DT)', approver: 'Dekan' },
-    { id: 'sk-psi3', unitKerja: 'Fakultas Psikologi', jabatan: 'Kaprodi', status: 'Dosen Tugas Tambahan (DT)', approver: 'Dekan' },
-    { id: 'sk-psi4', unitKerja: 'Fakultas Psikologi', jabatan: 'Sekretaris Prodi', status: 'Dosen Tugas Tambahan (DT)', approver: 'Dekan' },
-    { id: 'sk-psi5', unitKerja: 'Fakultas Psikologi', jabatan: 'Dosen', status: 'Dosen Biasa (DS)', approver: 'Kaprodi' },
-    { id: 'sk-psi6', unitKerja: 'Fakultas Psikologi', jabatan: 'Tenaga Kependidikan', status: 'Staf', approver: 'Dekan' },
-
-    { id: 'sk-fisip1', unitKerja: 'Fakultas Ilmu Sosial dan Ilmu Politik', jabatan: 'Dekan', status: 'Dosen Tugas Tambahan (DT)', approver: 'Rektor' },
-    { id: 'sk-fisip2', unitKerja: 'Fakultas Ilmu Sosial dan Ilmu Politik', jabatan: 'Wakil Dekan', status: 'Dosen Tugas Tambahan (DT)', approver: 'Dekan' },
-    { id: 'sk-fisip3', unitKerja: 'Fakultas Ilmu Sosial dan Ilmu Politik', jabatan: 'Kaprodi', status: 'Dosen Tugas Tambahan (DT)', approver: 'Dekan' },
-    { id: 'sk-fisip4', unitKerja: 'Fakultas Ilmu Sosial dan Ilmu Politik', jabatan: 'Sekretaris Prodi', status: 'Dosen Tugas Tambahan (DT)', approver: 'Dekan' },
-    { id: 'sk-fisip5', unitKerja: 'Fakultas Ilmu Sosial dan Ilmu Politik', jabatan: 'Dosen', status: 'Dosen Biasa (DS)', approver: 'Kaprodi' },
-    { id: 'sk-fisip6', unitKerja: 'Fakultas Ilmu Sosial dan Ilmu Politik', jabatan: 'Tenaga Kependidikan', status: 'Staf', approver: 'Dekan' },
-
-    { id: 'sk-dir1', unitKerja: 'Direktorat Akademik (WR 1)', jabatan: 'Direktur Akademik', status: 'Dosen Tugas Tambahan (DT)', approver: 'Wakil Rektor 1' },
-    { id: 'sk-dir2', unitKerja: 'Direktorat Akademik (WR 1)', jabatan: 'Staf', status: 'Tenaga Kependidikan', approver: 'Direktur Akademik' },
-    { id: 'sk-dir3', unitKerja: 'Direktorat Sumber Daya Manusia (WR 1)', jabatan: 'Direktur SDM', status: 'Dosen Tugas Tambahan (DT)', approver: 'Wakil Rektor 1' },
-    { id: 'sk-dir4', unitKerja: 'Direktorat Sumber Daya Manusia (WR 1)', jabatan: 'Koordinator Pengembangan Karir', status: 'Tenaga Kependidikan dengan Jabatan', approver: 'Direktur SDM' },
-    { id: 'sk-dir5', unitKerja: 'Direktorat Sumber Daya Manusia (WR 1)', jabatan: 'Staf', status: 'Tenaga Kependidikan', approver: 'Direktur SDM' },
-
-    { id: 'sk-dir6', unitKerja: 'Direktorat Keuangan (WR 2)', jabatan: 'Direktur Keuangan', status: 'Tenaga Kependidikan dengan Jabatan', approver: 'Wakil Rektor 2' },
-    { id: 'sk-dir7', unitKerja: 'Direktorat Keuangan (WR 2)', jabatan: 'Staf', status: 'Tenaga Kependidikan', approver: 'Direktur Keuangan' },
-
-    { id: 'sk-b1', unitKerja: 'Badan Penjaminan Mutu Universitas', jabatan: 'Kepala Badan', status: 'Dosen Tugas Tambahan (DT)', approver: 'Rektor' },
-    { id: 'sk-b2', unitKerja: 'Badan Penjaminan Mutu Universitas', jabatan: 'Kepala Deputi Bidang Audit Mutu Internal dan Akreditasi', status: 'Dosen Tugas Tambahan (DT)', approver: 'Kepala Badan' },
-    { id: 'sk-b3', unitKerja: 'Badan Penjaminan Mutu Universitas', jabatan: 'Staf', status: 'Tenaga Kependidikan', approver: 'Kepala Badan' }
-  ]);
+  // Master Struktur Kampus (Tersambung Real-time ke Firebase Firestore)
+  const [strukturKampusUTS, setStrukturKampusUTS] = useState([]);
 
   const [formUnitBaru, setFormUnitBaru] = useState({ unitKerja: '', jabatan: '', status: 'Dosen Tugas Tambahan (DT)', approver: 'Dekan' });
 
@@ -124,9 +86,27 @@ function App() {
       setRiwayatIzin(snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() })));
     });
 
+    const unsubStruktur = onSnapshot(collection(db, "strukturKampus"), (snapshot) => {
+      const strukturData = snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
+      if (strukturData.length > 0) {
+        setStrukturKampusUTS(strukturData);
+      } else {
+        // Data default jika Firestore masih kosong
+        setStrukturKampusUTS([
+          { docId: 'sk-w1', unitKerja: 'Wakil Rektor 1', jabatan: 'Wakil Rektor 1', status: 'Dosen Tugas Tambahan (DT)', approver: 'Rektor' },
+          { docId: 'sk-w2', unitKerja: 'Wakil Rektor 2', jabatan: 'Wakil Rektor 2', status: 'Dosen Tugas Tambahan (DT)', approver: 'Rektor' },
+          { docId: 'sk-w3', unitKerja: 'Wakil Rektor 3', jabatan: 'Wakil Rektor 3', status: 'Dosen Tugas Tambahan (DT)', approver: 'Rektor' },
+          { docId: 'sk-w4', unitKerja: 'Wakil Rektor 4', jabatan: 'Wakil Rektor 4', status: 'Dosen Tugas Tambahan (DT)', approver: 'Rektor' },
+          { docId: 'sk-feb1', unitKerja: 'Fakultas Ekonomi dan Bisnis', jabatan: 'Dekan', status: 'Dosen Tugas Tambahan (DT)', approver: 'Rektor' },
+          { docId: 'sk-dir3', unitKerja: 'Direktorat Sumber Daya Manusia (WR 1)', jabatan: 'Direktur SDM', status: 'Dosen Tugas Tambahan (DT)', approver: 'Wakil Rektor 1' }
+        ]);
+      }
+    });
+
     return () => {
       unsubPegawai();
       unsubRiwayat();
+      unsubStruktur();
     };
   }, []);
 
@@ -412,7 +392,7 @@ function App() {
   };
 
   // ==========================================
-  // 7. FILTER PENGAMBILAN DATA (DIPERKETAT AGAR DATA YANG SUDAH DISETUJUI HILANG DARI LIST)
+  // 7. FILTER PENGAMBILAN DATA
   // ==========================================
   const isUserRektor = currentUser?.jabatan === 'Rektor' || currentUser?.role === 'rektor';
   const isApproverUser = currentUser?.role === 'admin' || isUserRektor || strukturKampusUTS.some(s => s.approver.toLowerCase().includes(currentUser?.jabatan?.toLowerCase() || ''));
@@ -420,12 +400,10 @@ function App() {
   const getPendingForCurrentUser = () => {
     if (!currentUser) return [];
     
-    // Admin dan Rektor melihat semua data yang masih berstatus "Menunggu Persetujuan"
     if (currentUser.role === 'admin' || isUserRektor) {
       return riwayatIzin.filter(i => i.status && i.status.includes('Menunggu Persetujuan'));
     }
     
-    // Wakil Rektor 1 (Rusmin Nurjadin) menangkap unit (WR 1) yang masih berstatus "Menunggu Persetujuan"
     if (currentUser.jabatan === 'Wakil Rektor 1') {
       return riwayatIzin.filter(i => {
         if (!i.status || !i.status.includes('Menunggu Persetujuan')) return false;
@@ -453,7 +431,6 @@ function App() {
       });
     }
 
-    // Untuk Direktur / Jabatan Approver Lainnya (misal: Direktur SDM)
     const userJabatan = currentUser.jabatan || '';
     return riwayatIzin.filter(i => {
       if (!i.status || !i.status.includes('Menunggu Persetujuan')) return false;
@@ -956,11 +933,18 @@ function App() {
 
           {activeMenu === 'master-struktur' && currentUser.role === 'admin' && (
             <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px' }}>
-              <h3>Master Struktur Kampus</h3>
-              <form onSubmit={(e) => {
+              <h3>Master Struktur Kampus (Tersimpan ke Database)</h3>
+              <form onSubmit={async (e) => {
                 e.preventDefault();
-                setStrukturKampusUTS([...strukturKampusUTS, { id: 'sk-' + Date.now(), ...formUnitBaru }]);
-                setFormUnitBaru({ unitKerja: '', jabatan: '', status: 'Dosen Tugas Tambahan (DT)', approver: 'Dekan' });
+                if (!formUnitBaru.unitKerja.trim() || !formUnitBaru.jabatan.trim()) return;
+                try {
+                  await addDoc(collection(db, "strukturKampus"), formUnitBaru);
+                  alert('Struktur kampus berhasil ditambahkan!');
+                  setFormUnitBaru({ unitKerja: '', jabatan: '', status: 'Dosen Tugas Tambahan (DT)', approver: 'Dekan' });
+                } catch (err) {
+                  console.error(err);
+                  alert('Gagal menyimpan struktur ke database.');
+                }
               }} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr auto', gap: '10px', marginTop: '15px', alignItems: 'end' }}>
                 <input type="text" value={formUnitBaru.unitKerja} onChange={(e) => setFormUnitBaru({...formUnitBaru, unitKerja: e.target.value})} className="form-input" placeholder="Unit Kerja..." required />
                 <input type="text" value={formUnitBaru.jabatan} onChange={(e) => setFormUnitBaru({...formUnitBaru, jabatan: e.target.value})} className="form-input" placeholder="Jabatan..." required />
@@ -981,13 +965,18 @@ function App() {
                 </thead>
                 <tbody>
                   {strukturKampusUTS.map(s => (
-                    <tr key={s.id} className="td-tr">
+                    <tr key={s.docId || s.id} className="td-tr">
                       <td className="td-cell"><b>{s.unitKerja}</b></td>
                       <td className="td-cell">{s.jabatan}</td>
                       <td className="td-cell">{s.status}</td>
                       <td className="td-cell">{s.approver}</td>
                       <td className="td-cell">
-                        <button onClick={() => setStrukturKampusUTS(strukturKampusUTS.filter(item => item.id !== s.id))} style={{ backgroundColor: '#ef4444', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}>Hapus</button>
+                        <button onClick={async () => {
+                          if (window.confirm('Yakin ingin menghapus struktur ini?')) {
+                            await deleteDoc(doc(db, "strukturKampus", s.docId));
+                            alert('Struktur berhasil dihapus.');
+                          }
+                        }} style={{ backgroundColor: '#ef4444', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}>Hapus</button>
                       </td>
                     </tr>
                   ))}
