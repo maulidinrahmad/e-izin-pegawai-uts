@@ -414,7 +414,7 @@ function App() {
   };
 
   // ==========================================
-  // 8. LOGIKA PENGAJUAN & PENYETUJU SPESIFIK PRODI (DIGANTI DENGAN PRODI MANUAL)
+  // 8. LOGIKA PENGAJUAN & PENYETUJU SPESIFIK JABATAN & PRODI
   // ==========================================
   const hitungDurasiHari = (tglMulai, tglSelesai) => {
     if (!tglMulai || !tglSelesai) return 0;
@@ -425,12 +425,17 @@ function App() {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
   };
 
-  // Mengganti kata "masing-masing" dengan nama prodi yang diinput manual saat register
+  // Menentukan target approver berdasarkan jabatan pemohon
   const getTargetApprover = (userObj) => {
     if (!userObj) return 'Atasan Langsung';
-    if (userObj.jabatan === 'Dosen' || userObj.jabatan === 'Sekretaris Prodi') {
+    // Jika Dosen -> lari ke Kaprodi sesuai Prodinya
+    if (userObj.jabatan === 'Dosen') {
       const namaProdi = userObj.prodi && userObj.prodi !== '-' ? userObj.prodi : userObj.unitKerja;
       return `Kaprodi ${namaProdi}`;
+    }
+    // Jika Kaprodi, Sekretaris Prodi, Wakil Dekan -> lari ke Dekan Fakultasnya
+    if (['Kaprodi', 'Sekretaris Prodi', 'Wakil Dekan'].includes(userObj.jabatan)) {
+      return `Dekan ${userObj.unitKerja}`;
     }
     return userObj.approver || 'Rektor';
   };
@@ -514,7 +519,7 @@ function App() {
 
   const handleProsesPersetujuan = async (docId, targetItem, statusKeputusan) => {
     const isApprove = statusKeputusan === 'Disetujui';
-    const finalStatusText = isApprove ? `Disetujui oleh ${currentUser.jabatan} (${currentUser.prodi || ''})` : `Ditolak oleh ${currentUser.jabatan}`;
+    const finalStatusText = isApprove ? `Disetujui oleh ${currentUser.jabatan}` : `Ditolak oleh ${currentUser.jabatan}`;
 
     try {
       await updateDoc(doc(db, "riwayatIzin", docId), { status: finalStatusText });
@@ -534,7 +539,7 @@ function App() {
   };
 
   // ==========================================
-  // 9. FILTER PENGAMBILAN DATA KETAT BERDASARKAN PRODI MANUAL
+  // 9. FILTER PENGAMBILAN DATA PERSENTASE KETAT BERDASARKAN JABATAN & PRODI
   // ==========================================
   const isUserRektor = currentUser?.jabatan === 'Rektor' || currentUser?.role === 'rektor';
   const isApproverUser = currentUser?.role === 'admin' || isUserRektor || strukturKampusUTS.some(s => s.approver.toLowerCase().includes(currentUser?.jabatan?.toLowerCase() || ''));
@@ -543,13 +548,27 @@ function App() {
     if (!currentUser) return [];
     if (currentUser.role === 'admin' || isUserRektor) return riwayatIzin.filter(i => i.status.includes('Menunggu Persetujuan'));
     
-    // Jika user adalah Kaprodi, saring persetujuan HANYA untuk pemohon yang memiliki prodi persis sama dengan prodi Kaprodi tersebut
+    // A. JIKA USER ADALAH KAPRODI: HANYA MENAMPILKAN DOSEN DENGAN PRODI YANG SAMA PERSIS
     if (currentUser.jabatan === 'Kaprodi') {
       const myProdi = currentUser.prodi ? currentUser.prodi.trim().toLowerCase() : '';
       return riwayatIzin.filter(i => {
         if (!i.status.includes('Menunggu Persetujuan')) return false;
+        // Pastikan pemohon berstatus Dosen dan prodinya sama persis dengan Kaprodi
+        const isDosen = i.jabatan === 'Dosen';
         const pemohonProdi = i.prodi ? i.prodi.trim().toLowerCase() : '';
-        return pemohonProdi === myProdi && myProdi !== '-' && myProdi !== '';
+        return isDosen && pemohonProdi === myProdi && myProdi !== '-' && myProdi !== '';
+      });
+    }
+
+    // B. JIKA USER ADALAH DEKAN: HANYA MENAMPILKAN KAPRODI / WAKIL DEKAN / TENDIK DI FAKULTAS TERSEBUT
+    if (currentUser.jabatan === 'Dekan') {
+      const myUnit = currentUser.unitKerja ? currentUser.unitKerja.trim().toLowerCase() : '';
+      return riwayatIzin.filter(i => {
+        if (!i.status.includes('Menunggu Persetujuan')) return false;
+        const pemohonUnit = i.unitKerja ? i.unitKerja.trim().toLowerCase() : '';
+        // Dekan menyetujui Kaprodi, Sekretaris Prodi, Wakil Dekan, atau Staf di unit fakultasnya
+        const isBawahanDekan = ['kaprodi', 'sekretaris prodi', 'wakil dekan', 'tenaga kependidikan'].includes(i.jabatan?.toLowerCase());
+        return isBawahanDekan && pemohonUnit === myUnit;
       });
     }
 
@@ -922,7 +941,7 @@ function App() {
                       </tr>
                     ))
                   ) : (
-                    <tr><td colSpan="7" style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>Tidak ada permohonan baru untuk prodi Anda.</td></tr>
+                    <tr><td colSpan="7" style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>Tidak ada permohonan baru untuk Anda.</td></tr>
                   )}
                 </tbody>
               </table>
