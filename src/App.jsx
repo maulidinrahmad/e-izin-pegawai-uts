@@ -160,7 +160,6 @@ function App() {
     { unitKerja: 'Direktorat Pengelolaan dan Pemeliharaan Fasilitas (WR 2)', jabatan: 'Koordinator Aset, Inventaris & Kebersihan', status: 'Tenaga Kependidikan dengan Jabatan', approver: 'Direktur Fasilitas' },
     { unitKerja: 'Direktorat Pengelolaan dan Pemeliharaan Fasilitas (WR 2)', jabatan: 'Koordinator IT Office', status: 'Tenaga Kependidikan dengan Jabatan', approver: 'Direktur Fasilitas' },
     { unitKerja: 'Direktorat Pengelolaan dan Pemeliharaan Fasilitas (WR 2)', jabatan: 'Staf', status: 'Tenaga Kependidikan', approver: 'Direktur Fasilitas' },
-    // TAMBAHAN BARU: Tenaga Penunjang di Direktorat Pengelolaan dan Pemeliharaan Fasilitas
     { unitKerja: 'Direktorat Pengelolaan dan Pemeliharaan Fasilitas (WR 2)', jabatan: 'Tenaga Penunjang', status: 'Tenaga Kependidikan', approver: 'Direktur Fasilitas' },
 
     // --- KLASTER WAKIL REKTOR 3 ---
@@ -194,8 +193,6 @@ function App() {
   };
 
   const [regForm, setRegForm] = useState(initialRegState);
-
-  // STATE UNTUK EDIT PEGAWAI OLEH ADMIN
   const [editingPegawai, setEditingPegawai] = useState(null);
   const [editForm, setEditForm] = useState({
     nama: '',
@@ -336,7 +333,7 @@ function App() {
         jabatan: selectedStruktur.jabatan,
         statusJabatan: selectedStruktur.status,
         approver: selectedStruktur.approver,
-        prodi: needsProdi ? regForm.prodi : '-',
+        prodi: needsProdi ? regForm.prodi.trim() : '-',
         role: 'pegawai',
         jatahCuti: 12,
         statusAkun: 'Pending'
@@ -379,7 +376,6 @@ function App() {
     }
   };
 
-  // FUNGSI EDIT PEGAWAI OLEH ADMIN
   const handleOpenEditModal = (p) => {
     setEditingPegawai(p);
     const matchedStruktur = strukturKampusUTS.find(s => s.unitKerja === p.unitKerja && s.jabatan === p.jabatan) || strukturKampusUTS[0];
@@ -407,7 +403,7 @@ function App() {
         jabatan: selStruktur.jabatan,
         statusJabatan: selStruktur.status,
         approver: selStruktur.approver,
-        prodi: needsProdi ? editForm.prodi : '-'
+        prodi: needsProdi ? editForm.prodi.trim() : '-'
       });
       alert('Data pegawai berhasil diperbarui!');
       setEditingPegawai(null);
@@ -418,7 +414,7 @@ function App() {
   };
 
   // ==========================================
-  // 8. LOGIKA PENGAJUAN IZIN & CUTI OTOMATIS APPROVER
+  // 8. LOGIKA PENGAJUAN & PENYETUJUAN SPESIFIK PRODI
   // ==========================================
   const hitungDurasiHari = (tglMulai, tglSelesai) => {
     if (!tglMulai || !tglSelesai) return 0;
@@ -429,10 +425,11 @@ function App() {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
   };
 
+  // Menentukan target penyetuju secara spesifik (termasuk Prodi jika Kaprodi)
   const getTargetApprover = (userObj) => {
     if (!userObj) return 'Atasan Langsung';
-    if ((userObj.jabatan === 'Dosen' || userObj.jabatan === 'Kaprodi' || userObj.jabatan === 'Sekretaris Prodi') && userObj.approver === 'Dekan') {
-      return `Dekan ${userObj.unitKerja}`;
+    if (userObj.jabatan === 'Dosen' || userObj.jabatan === 'Sekretaris Prodi') {
+      return `Kaprodi ${userObj.prodi && userObj.prodi !== '-' ? userObj.prodi : userObj.unitKerja}`;
     }
     return userObj.approver || 'Rektor';
   };
@@ -536,7 +533,7 @@ function App() {
   };
 
   // ==========================================
-  // 9. FILTER PENGAMBILAN DATA UNTUK APPROVER & RIWAYAT
+  // 9. FILTER PENGAMBILAN DATA SPESIFIK PRODI UNTUK APPROVER
   // ==========================================
   const isUserRektor = currentUser?.jabatan === 'Rektor' || currentUser?.role === 'rektor';
   const isApproverUser = currentUser?.role === 'admin' || isUserRektor || strukturKampusUTS.some(s => s.approver.toLowerCase().includes(currentUser?.jabatan?.toLowerCase() || ''));
@@ -545,6 +542,17 @@ function App() {
     if (!currentUser) return [];
     if (currentUser.role === 'admin' || isUserRektor) return riwayatIzin.filter(i => i.status.includes('Menunggu Persetujuan'));
     
+    // PERBAIKAN UTAMA: Jika user adalah Kaprodi, saring persetujuan HANYA untuk pemohon yang prodinya sama persis!
+    if (currentUser.jabatan === 'Kaprodi') {
+      const myProdi = currentUser.prodi ? currentUser.prodi.trim().toLowerCase() : '';
+      return riwayatIzin.filter(i => {
+        if (!i.status.includes('Menunggu Persetujuan')) return false;
+        const pemohonProdi = i.prodi ? i.prodi.trim().toLowerCase() : '';
+        // Cocokkan jika targetApprover mengandung nama prodi atau unit kerjanya
+        return i.targetApprover?.toLowerCase().includes(myProdi) || pemohonProdi === myProdi;
+      });
+    }
+
     const userJabatan = currentUser.jabatan || '';
     return riwayatIzin.filter(i => i.status.toLowerCase().includes(userJabatan.toLowerCase()));
   };
@@ -654,7 +662,7 @@ function App() {
               {['Dosen', 'Kaprodi', 'Sekretaris Prodi'].includes(regForm.jabatanObj.jabatan) && (
                 <div className="form-group">
                   <label className="form-label">Nama Program Studi</label>
-                  <input type="text" value={regForm.prodi} onChange={(e) => setRegForm({...regForm, prodi: e.target.value})} placeholder="Contoh: Ilmu Administrasi Negara" className="form-input" required />
+                  <input type="text" value={regForm.prodi} onChange={(e) => setRegForm({...regForm, prodi: e.target.value})} placeholder="Contoh: Ekonomi Pembangunan" className="form-input" required />
                 </div>
               )}
 
@@ -760,7 +768,7 @@ function App() {
               {activeMenu === 'dashboard' && 'Dashboard Utama - PASTI UTS'}
               {activeMenu === 'ajukan-izin' && 'Form Pengajuan Izin Pegawai'}
               {activeMenu === 'ajukan-cuti' && 'Form Pengajuan Cuti Pegawai'}
-              {activeMenu === 'persetujuan' && `Persetujuan Masuk (${currentUser.jabatan})`}
+              {activeMenu === 'persetujuan' && `Persetujuan Masuk (${currentUser.jabatan} ${currentUser.prodi && currentUser.prodi !== '-' ? `- ${currentUser.prodi}` : ''})`}
               {activeMenu === 'master-pegawai' && 'Manajemen Master Data Karyawan'}
               {activeMenu === 'riwayat' && 'Riwayat & Rekapan Laporan PASTI'}
             </h2>
@@ -882,7 +890,7 @@ function App() {
 
           {activeMenu === 'persetujuan' && isApproverUser && currentUser.role !== 'admin' && (
             <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', overflowX: 'auto' }}>
-              <h3>Daftar Permohonan Masuk untuk {currentUser.jabatan}</h3>
+              <h3>Daftar Permohonan Masuk untuk {currentUser.jabatan} {currentUser.prodi && currentUser.prodi !== '-' ? `(${currentUser.prodi})` : ''}</h3>
               <table className="table-style" style={{ marginTop: '15px' }}>
                 <thead>
                   <tr className="th-tr">
@@ -914,7 +922,7 @@ function App() {
                       </tr>
                     ))
                   ) : (
-                    <tr><td colSpan="7" style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>Tidak ada permohonan baru.</td></tr>
+                    <tr><td colSpan="7" style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>Tidak ada permohonan baru untuk prodi Anda.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -946,14 +954,13 @@ function App() {
                           <><br/><small style={{ color: '#0284c7' }}>Prodi: {p.prodi}</small></>
                         )}
                       </td>
-                      <td className="td-cell" style={{ color: '#0284c7', fontWeight: 'bold' }}>{p.approver || '-'}</td>
+                      <td className="td-cell" style={{ color: '#0284c7', fontWeight: 'bold' }}>{getTargetApprover(p)}</td>
                       <td className="td-cell"><span style={{ padding: '3px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold', backgroundColor: p.statusAkun === 'Pending' ? '#fef3c7' : '#dcfce7', color: p.statusAkun === 'Pending' ? '#b45309' : '#15803d' }}>{p.statusAkun}</span></td>
                       <td className="td-cell">
                         <div style={{ display: 'flex', gap: '5px' }}>
                           {p.statusAkun === 'Pending' && (
                             <button onClick={() => handleApprovePegawai(p.docId)} style={{ ...styles.btnAction, backgroundColor: '#059669' }}>Approve</button>
                           )}
-                          {/* TOMBOL EDIT BARU */}
                           <button onClick={() => handleOpenEditModal(p)} style={{ ...styles.btnAction, backgroundColor: '#0284c7' }} title="Edit Pegawai">
                             <i className="fa-solid fa-pen-to-square"></i>
                           </button>
@@ -1005,7 +1012,7 @@ function App() {
         </div>
       </main>
 
-      {/* MODAL POPUP EDIT PEGAWAI OLEH ADMIN */}
+      {/* MODAL EDIT PEGAWAI */}
       {editingPegawai && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '20px' }}>
           <div style={{ backgroundColor: '#fff', padding: '25px', borderRadius: '12px', width: '100%', maxWidth: '500px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
