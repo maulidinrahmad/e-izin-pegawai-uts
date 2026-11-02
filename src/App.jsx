@@ -42,7 +42,7 @@ function App() {
   ]);
 
   // ==========================================
-  // 3. MASTER STRUKTUR KAMPUS & ATURAN PENYETUJU (SESUAI EXCEL UTS + TAMBAHAN)
+  // 3. MASTER STRUKTUR KAMPUS & ATURAN PENYETUJU (SESUAI EXCEL UTS)
   // ==========================================
   const strukturKampusUTS = [
     // --- KLASTER FAKULTAS & PASCASARJANA ---
@@ -92,7 +92,7 @@ function App() {
     { unitKerja: 'Fakultas Ilmu Budaya', jabatan: 'Wakil Dekan', status: 'Dosen Tugas Tambahan (DT)', approver: 'Dekan' },
     { unitKerja: 'Fakultas Ilmu Budaya', jabatan: 'Kaprodi', status: 'Dosen Tugas Tambahan (DT)', approver: 'Dekan' },
     { unitKerja: 'Fakultas Ilmu Budaya', jabatan: 'Sekretaris Prodi', status: 'Dosen Tugas Tambahan (DT)', approver: 'Dekan' },
-    { unitKerja: 'Fakultas Ilmu Budaya', jabatan: 'Dosen', status: 'Dosen Biasa (DS)', approver: 'Kaprodi ' },
+    { unitKerja: 'Fakultas Ilmu Budaya', jabatan: 'Dosen', status: 'Dosen Biasa (DS)', approver: 'Kaprodi' },
     { unitKerja: 'Fakultas Ilmu Budaya', jabatan: 'Tenaga Kependidikan', status: 'Staf', approver: 'Dekan' },
 
     { unitKerja: 'Fakultas Ilmu Sosial dan Ilmu Politik', jabatan: 'Dekan', status: 'Dosen Tugas Tambahan (DT)', approver: 'Rektor' },
@@ -414,7 +414,7 @@ function App() {
   };
 
   // ==========================================
-  // 8. LOGIKA PENGAJUAN & PENYETUJUAN SPESIFIK PRODI
+  // 8. LOGIKA PENGAJUAN & PENYETUJU SPESIFIK PRODI (DIGANTI DENGAN PRODI MANUAL)
   // ==========================================
   const hitungDurasiHari = (tglMulai, tglSelesai) => {
     if (!tglMulai || !tglSelesai) return 0;
@@ -425,11 +425,12 @@ function App() {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
   };
 
-  // Menentukan target penyetuju secara spesifik (termasuk Prodi jika Kaprodi)
+  // Mengganti kata "masing-masing" dengan nama prodi yang diinput manual saat register
   const getTargetApprover = (userObj) => {
     if (!userObj) return 'Atasan Langsung';
     if (userObj.jabatan === 'Dosen' || userObj.jabatan === 'Sekretaris Prodi') {
-      return `Kaprodi ${userObj.prodi && userObj.prodi !== '-' ? userObj.prodi : userObj.unitKerja}`;
+      const namaProdi = userObj.prodi && userObj.prodi !== '-' ? userObj.prodi : userObj.unitKerja;
+      return `Kaprodi ${namaProdi}`;
     }
     return userObj.approver || 'Rektor';
   };
@@ -513,7 +514,7 @@ function App() {
 
   const handleProsesPersetujuan = async (docId, targetItem, statusKeputusan) => {
     const isApprove = statusKeputusan === 'Disetujui';
-    const finalStatusText = isApprove ? `Disetujui oleh ${currentUser.jabatan}` : `Ditolak oleh ${currentUser.jabatan}`;
+    const finalStatusText = isApprove ? `Disetujui oleh ${currentUser.jabatan} (${currentUser.prodi || ''})` : `Ditolak oleh ${currentUser.jabatan}`;
 
     try {
       await updateDoc(doc(db, "riwayatIzin", docId), { status: finalStatusText });
@@ -533,7 +534,7 @@ function App() {
   };
 
   // ==========================================
-  // 9. FILTER PENGAMBILAN DATA SPESIFIK PRODI UNTUK APPROVER
+  // 9. FILTER PENGAMBILAN DATA KETAT BERDASARKAN PRODI MANUAL
   // ==========================================
   const isUserRektor = currentUser?.jabatan === 'Rektor' || currentUser?.role === 'rektor';
   const isApproverUser = currentUser?.role === 'admin' || isUserRektor || strukturKampusUTS.some(s => s.approver.toLowerCase().includes(currentUser?.jabatan?.toLowerCase() || ''));
@@ -542,14 +543,13 @@ function App() {
     if (!currentUser) return [];
     if (currentUser.role === 'admin' || isUserRektor) return riwayatIzin.filter(i => i.status.includes('Menunggu Persetujuan'));
     
-    // PERBAIKAN UTAMA: Jika user adalah Kaprodi, saring persetujuan HANYA untuk pemohon yang prodinya sama persis!
+    // Jika user adalah Kaprodi, saring persetujuan HANYA untuk pemohon yang memiliki prodi persis sama dengan prodi Kaprodi tersebut
     if (currentUser.jabatan === 'Kaprodi') {
       const myProdi = currentUser.prodi ? currentUser.prodi.trim().toLowerCase() : '';
       return riwayatIzin.filter(i => {
         if (!i.status.includes('Menunggu Persetujuan')) return false;
         const pemohonProdi = i.prodi ? i.prodi.trim().toLowerCase() : '';
-        // Cocokkan jika targetApprover mengandung nama prodi atau unit kerjanya
-        return i.targetApprover?.toLowerCase().includes(myProdi) || pemohonProdi === myProdi;
+        return pemohonProdi === myProdi && myProdi !== '-' && myProdi !== '';
       });
     }
 
@@ -662,7 +662,7 @@ function App() {
               {['Dosen', 'Kaprodi', 'Sekretaris Prodi'].includes(regForm.jabatanObj.jabatan) && (
                 <div className="form-group">
                   <label className="form-label">Nama Program Studi</label>
-                  <input type="text" value={regForm.prodi} onChange={(e) => setRegForm({...regForm, prodi: e.target.value})} placeholder="Contoh: Ekonomi Pembangunan" className="form-input" required />
+                  <input type="text" value={regForm.prodi} onChange={(e) => setRegForm({...regForm, prodi: e.target.value})} placeholder="Contoh: Ilmu Pemerintahan" className="form-input" required />
                 </div>
               )}
 
