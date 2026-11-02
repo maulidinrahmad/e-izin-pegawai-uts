@@ -42,9 +42,15 @@ function App() {
   ]);
 
   // ==========================================
-  // 3. MASTER STRUKTUR KAMPUS & ATURAN PENYETUJU (SESUAI EXCEL UTS)
+  // 3. MASTER STRUKTUR KAMPUS & ATURAN PENYETUJU (DITAMBAH WAREK 1-4)
   // ==========================================
   const strukturKampusUTS = [
+    // --- KLASTER WAKIL REKTOR (PILIHAN BARU) ---
+    { unitKerja: 'Wakil Rektor 1', jabatan: 'Wakil Rektor 1', status: 'Dosen Tugas Tambahan (DT)', approver: 'Rektor' },
+    { unitKerja: 'Wakil Rektor 2', jabatan: 'Wakil Rektor 2', status: 'Dosen Tugas Tambahan (DT)', approver: 'Rektor' },
+    { unitKerja: 'Wakil Rektor 3', jabatan: 'Wakil Rektor 3', status: 'Dosen Tugas Tambahan (DT)', approver: 'Rektor' },
+    { unitKerja: 'Wakil Rektor 4', jabatan: 'Wakil Rektor 4', status: 'Dosen Tugas Tambahan (DT)', approver: 'Rektor' },
+
     // --- KLASTER FAKULTAS & PASCASARJANA ---
     { unitKerja: 'Fakultas Ekonomi dan Bisnis', jabatan: 'Dekan', status: 'Dosen Tugas Tambahan (DT)', approver: 'Rektor' },
     { unitKerja: 'Fakultas Ekonomi dan Bisnis', jabatan: 'Wakil Dekan', status: 'Dosen Tugas Tambahan (DT)', approver: 'Dekan' },
@@ -134,7 +140,7 @@ function App() {
     { unitKerja: 'Badan Pembinaan Karakter dan Hubungan Orang Tua', jabatan: 'Koordinator BPKO', status: 'Tenaga Kependidikan dengan Jabatan', approver: 'Kepala BPKO' },
     { unitKerja: 'Badan Pembinaan Karakter dan Hubungan Orang Tua', jabatan: 'Staf', status: 'Tenaga Kependidikan', approver: 'Kepala BPKO' },
 
-    // --- KLASTER WAKIL REKTOR 1 ---
+    // --- KLASTER DIREKTORAT WR 1 ---
     { unitKerja: 'Direktorat Akademik (WR 1)', jabatan: 'Direktur Akademik', status: 'Dosen Tugas Tambahan (DT)', approver: 'Wakil Rektor 1' },
     { unitKerja: 'Direktorat Akademik (WR 1)', jabatan: 'Kepala Subdir Administrasi Akademik', status: 'Tenaga Kependidikan dengan Jabatan', approver: 'Direktur Akademik' },
     { unitKerja: 'Direktorat Akademik (WR 1)', jabatan: 'Kepala Subdir Pengembangan dan Inovasi Pembelajaran', status: 'Tenaga Kependidikan dengan Jabatan', approver: 'Direktur Akademik' },
@@ -149,7 +155,7 @@ function App() {
     { unitKerja: 'Direktorat Sumber Daya Manusia (WR 1)', jabatan: 'Koordinator Pengembangan Karir', status: 'Tenaga Kependidikan dengan Jabatan', approver: 'Direktur SDM' },
     { unitKerja: 'Direktorat Sumber Daya Manusia (WR 1)', jabatan: 'Staf', status: 'Tenaga Kependidikan', approver: 'Direktur SDM' },
 
-    // --- KLASTER WAKIL REKTOR 2 ---
+    // --- KLASTER DIREKTORAT WR 2 ---
     { unitKerja: 'Direktorat Keuangan (WR 2)', jabatan: 'Direktur Keuangan', status: 'Tenaga Kependidikan dengan Jabatan', approver: 'Wakil Rektor 2' },
     { unitKerja: 'Direktorat Keuangan (WR 2)', jabatan: 'Kepala Sub Kebendaharaan', status: 'Tenaga Kependidikan dengan Jabatan', approver: 'Wakil Rektor 2' },
     { unitKerja: 'Direktorat Keuangan (WR 2)', jabatan: 'Kepala Subdir Akuntansi Sistem Informasi Keuangan', status: 'Tenaga Kependidikan dengan Jabatan', approver: 'Direktur Keuangan' },
@@ -162,12 +168,12 @@ function App() {
     { unitKerja: 'Direktorat Pengelolaan dan Pemeliharaan Fasilitas (WR 2)', jabatan: 'Staf', status: 'Tenaga Kependidikan', approver: 'Direktur Fasilitas' },
     { unitKerja: 'Direktorat Pengelolaan dan Pemeliharaan Fasilitas (WR 2)', jabatan: 'Tenaga Penunjang', status: 'Tenaga Kependidikan', approver: 'Direktur Fasilitas' },
 
-    // --- KLASTER WAKIL REKTOR 3 ---
+    // --- KLASTER DIREKTORAT WR 3 ---
     { unitKerja: 'Direktorat PKM dan Penerapan Riset (WR 3)', jabatan: 'Direktur PKM dan Riset', status: 'Dosen Tugas Tambahan (DT)', approver: 'Wakil Rektor 3' },
     { unitKerja: 'Direktorat PKM dan Penerapan Riset (WR 3)', jabatan: 'Kepala Subdir PKM dan Penerapan Riset', status: 'Tenaga Kependidikan dengan Jabatan', approver: 'Direktur PKM dan Riset' },
     { unitKerja: 'Direktorat PKM dan Penerapan Riset (WR 3)', jabatan: 'Staf', status: 'Tenaga Kependidikan', approver: 'Direktur PKM dan Riset' },
 
-    // --- KLASTER WAKIL REKTOR 4 ---
+    // --- KLASTER DIREKTORAT WR 4 ---
     { unitKerja: 'Direktorat Kerjasama (WR 4)', jabatan: 'Direktur Kerjasama', status: 'Dosen Tugas Tambahan (DT)', approver: 'Wakil Rektor 4' },
     { unitKerja: 'Direktorat Kerjasama (WR 4)', jabatan: 'Kepala Sub Dir Kerjasama & Beasiswa', status: 'Tenaga Kependidikan dengan Jabatan', approver: 'Wakil Rektor 4' },
     { unitKerja: 'Direktorat Kerjasama (WR 4)', jabatan: 'Staf', status: 'Tenaga Kependidikan', approver: 'Direktur Kerjasama' },
@@ -539,7 +545,7 @@ function App() {
   };
 
   // ==========================================
-  // 9. FILTER PENGAMBILAN DATA PERSENTASE KETAT BERDASARKAN JABATAN & PRODI
+  // 9. FILTER PENGAMBILAN DATA BERDASARKAN JABATAN & PRODI
   // ==========================================
   const isUserRektor = currentUser?.jabatan === 'Rektor' || currentUser?.role === 'rektor';
   const isApproverUser = currentUser?.role === 'admin' || isUserRektor || strukturKampusUTS.some(s => s.approver.toLowerCase().includes(currentUser?.jabatan?.toLowerCase() || ''));
@@ -553,7 +559,6 @@ function App() {
       const myProdi = currentUser.prodi ? currentUser.prodi.trim().toLowerCase() : '';
       return riwayatIzin.filter(i => {
         if (!i.status.includes('Menunggu Persetujuan')) return false;
-        // Pastikan pemohon berstatus Dosen dan prodinya sama persis dengan Kaprodi
         const isDosen = i.jabatan === 'Dosen';
         const pemohonProdi = i.prodi ? i.prodi.trim().toLowerCase() : '';
         return isDosen && pemohonProdi === myProdi && myProdi !== '-' && myProdi !== '';
@@ -566,7 +571,6 @@ function App() {
       return riwayatIzin.filter(i => {
         if (!i.status.includes('Menunggu Persetujuan')) return false;
         const pemohonUnit = i.unitKerja ? i.unitKerja.trim().toLowerCase() : '';
-        // Dekan menyetujui Kaprodi, Sekretaris Prodi, Wakil Dekan, atau Staf di unit fakultasnya
         const isBawahanDekan = ['kaprodi', 'sekretaris prodi', 'wakil dekan', 'tenaga kependidikan'].includes(i.jabatan?.toLowerCase());
         return isBawahanDekan && pemohonUnit === myUnit;
       });
