@@ -45,9 +45,7 @@ function App() {
   const [inputBaruIzin, setInputBaruIzin] = useState('');
   const [inputBaruCuti, setInputBaruCuti] = useState('');
 
-  // Master Struktur Kampus (Tersambung Real-time ke Firebase Firestore)
   const [strukturKampusUTS, setStrukturKampusUTS] = useState([]);
-
   const [formUnitBaru, setFormUnitBaru] = useState({ unitKerja: '', jabatan: '', status: 'Dosen Tugas Tambahan (DT)', approver: 'Dekan' });
 
   const [editingPegawai, setEditingPegawai] = useState(null);
@@ -91,7 +89,6 @@ function App() {
       if (strukturData.length > 0) {
         setStrukturKampusUTS(strukturData);
       } else {
-        // Data default jika Firestore masih kosong
         setStrukturKampusUTS([
           { docId: 'sk-w1', unitKerja: 'Wakil Rektor 1', jabatan: 'Wakil Rektor 1', status: 'Dosen Tugas Tambahan (DT)', approver: 'Rektor' },
           { docId: 'sk-w2', unitKerja: 'Wakil Rektor 2', jabatan: 'Wakil Rektor 2', status: 'Dosen Tugas Tambahan (DT)', approver: 'Rektor' },
@@ -113,23 +110,6 @@ function App() {
   // ==========================================
   // 4. AUTENTIKASI & REGISTRASI
   // ==========================================
-  const seedInitialData = async () => {
-    try {
-      await addDoc(collection(db, "pegawai"), {
-        username: 'admin', password: '123', nama: 'Administrator IT', nip: 'ADM001',
-        unitKerja: 'Pusat Komputer & Data', jabatan: 'Admin Sistem', statusJabatan: 'Admin', approver: '-', role: 'admin', jatahCuti: 12, statusAkun: 'Aktif'
-      });
-      await addDoc(collection(db, "pegawai"), {
-        username: 'rektor', password: '123', nama: 'Dr. Rektor UTS, M.Si.', nip: '197001012000',
-        unitKerja: 'Rektorat UTS', jabatan: 'Rektor', statusJabatan: 'Rektor', approver: '-', role: 'rektor', jatahCuti: 12, statusAkun: 'Aktif'
-      });
-      alert('Inisialisasi data awal berhasil!');
-    } catch (err) {
-      console.error(err);
-      alert('Gagal inisialisasi.');
-    }
-  };
-
   const handleLogin = (e) => {
     e.preventDefault();
     const query = loginInput.trim().toLowerCase();
@@ -257,7 +237,7 @@ function App() {
   };
 
   // ==========================================
-  // 6. LOGIKA PENYETUJU SPESIFIK
+  // 6. LOGIKA MUTLAK PENYETUJU SPESIFIK & MENTOK DI REKTOR
   // ==========================================
   const hitungDurasiHari = (tglMulai, tglSelesai) => {
     if (!tglMulai || !tglSelesai) return 0;
@@ -271,6 +251,15 @@ function App() {
   const getTargetApprover = (userObj) => {
     if (!userObj) return 'Atasan Langsung';
     
+    if (userObj.jabatan === 'Rektor' || userObj.role === 'rektor') {
+      return 'Mandiri (Pucuk Pimpinan)';
+    }
+
+    if (userObj.unitKerja?.includes('(WR 1)')) return 'Wakil Rektor 1';
+    if (userObj.unitKerja?.includes('(WR 2)')) return 'Wakil Rektor 2';
+    if (userObj.unitKerja?.includes('(WR 3)')) return 'Wakil Rektor 3';
+    if (userObj.unitKerja?.includes('(WR 4)')) return 'Wakil Rektor 4';
+
     if (userObj.jabatan === 'Dosen') {
       const namaProdi = userObj.prodi && userObj.prodi !== '-' ? userObj.prodi : userObj.unitKerja;
       return `Kaprodi ${namaProdi}`;
@@ -280,11 +269,6 @@ function App() {
       return `Dekan ${userObj.unitKerja}`;
     }
 
-    if (userObj.unitKerja?.includes('(WR 1)')) return 'Wakil Rektor 1';
-    if (userObj.unitKerja?.includes('(WR 2)')) return 'Wakil Rektor 2';
-    if (userObj.unitKerja?.includes('(WR 3)')) return 'Wakil Rektor 3';
-    if (userObj.unitKerja?.includes('(WR 4)')) return 'Wakil Rektor 4';
-
     return userObj.approver || 'Rektor';
   };
 
@@ -293,6 +277,11 @@ function App() {
 
   const handleSubmitIzin = async (e) => {
     e.preventDefault();
+    if (currentUser.jabatan === 'Rektor' || currentUser.role === 'rektor') {
+      alert('Akun Rektor merupakan pimpinan tertinggi dan tidak memerlukan pengajuan izin/cuti.');
+      return;
+    }
+
     const durasi = hitungDurasiHari(formIzin.tanggalMulai, formIzin.tanggalSelesai);
     const targetApprover = getTargetApprover(currentUser);
     const initialStatus = `Menunggu Persetujuan ${targetApprover}`;
@@ -327,6 +316,11 @@ function App() {
 
   const handleSubmitCuti = async (e) => {
     e.preventDefault();
+    if (currentUser.jabatan === 'Rektor' || currentUser.role === 'rektor') {
+      alert('Akun Rektor merupakan pimpinan tertinggi dan tidak memerlukan pengajuan izin/cuti.');
+      return;
+    }
+
     const durasi = hitungDurasiHari(formCuti.tanggalMulai, formCuti.tanggalSelesai);
     const pgwData = daftarPegawai.find(p => p.nip === currentUser.nip);
     const sisaCuti = pgwData ? pgwData.jatahCuti : 12;
@@ -392,7 +386,7 @@ function App() {
   };
 
   // ==========================================
-  // 7. FILTER PENGAMBILAN DATA
+  // 7. FILTER PENGAMBILAN DATA (DIPERKETAT & MENDUKUNG "Warek 1" / "Wakil Rektor 1")
   // ==========================================
   const isUserRektor = currentUser?.jabatan === 'Rektor' || currentUser?.role === 'rektor';
   const isApproverUser = currentUser?.role === 'admin' || isUserRektor || strukturKampusUTS.some(s => s.approver.toLowerCase().includes(currentUser?.jabatan?.toLowerCase() || ''));
@@ -400,14 +394,36 @@ function App() {
   const getPendingForCurrentUser = () => {
     if (!currentUser) return [];
     
-    if (currentUser.role === 'admin' || isUserRektor) {
-      return riwayatIzin.filter(i => i.status && i.status.includes('Menunggu Persetujuan'));
+    if (isUserRektor) {
+      return []; 
     }
     
-    if (currentUser.jabatan === 'Wakil Rektor 1') {
+    // Mendukung variasi penulisan "Wakil Rektor 1" atau "Warek 1"
+    if (currentUser.jabatan === 'Wakil Rektor 1' || currentUser.jabatan === 'Warek 1') {
       return riwayatIzin.filter(i => {
         if (!i.status || !i.status.includes('Menunggu Persetujuan')) return false;
         return i.unitKerja?.includes('(WR 1)');
+      });
+    }
+
+    if (currentUser.jabatan === 'Wakil Rektor 2' || currentUser.jabatan === 'Warek 2') {
+      return riwayatIzin.filter(i => {
+        if (!i.status || !i.status.includes('Menunggu Persetujuan')) return false;
+        return i.unitKerja?.includes('(WR 2)');
+      });
+    }
+
+    if (currentUser.jabatan === 'Wakil Rektor 3' || currentUser.jabatan === 'Warek 3') {
+      return riwayatIzin.filter(i => {
+        if (!i.status || !i.status.includes('Menunggu Persetujuan')) return false;
+        return i.unitKerja?.includes('(WR 3)');
+      });
+    }
+
+    if (currentUser.jabatan === 'Wakil Rektor 4' || currentUser.jabatan === 'Warek 4') {
+      return riwayatIzin.filter(i => {
+        if (!i.status || !i.status.includes('Menunggu Persetujuan')) return false;
+        return i.unitKerja?.includes('(WR 4)');
       });
     }
 
@@ -515,12 +531,6 @@ function App() {
                 <i className="fa-solid fa-right-to-bracket"></i> Masuk PASTI
               </button>
 
-              {daftarPegawai.length === 0 && (
-                <button type="button" onClick={seedInitialData} style={{ width: '100%', marginTop: '10px', padding: '8px', backgroundColor: '#059669', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }}>
-                  <i className="fa-solid fa-database"></i> Inisialisasi Akun Awal (Admin & Rektor)
-                </button>
-              )}
-
               <div style={{ textAlign: 'center', marginTop: '15px' }}>
                 <span onClick={() => setIsRegisterMode(true)} style={{ fontSize: '13px', color: '#0284c7', cursor: 'pointer', fontWeight: 'bold' }}>
                   Belum punya akun? Registrasi Pegawai Baru
@@ -619,7 +629,7 @@ function App() {
             <i className="fa-solid fa-chart-line icon-menu"></i> Dashboard
           </li>
           
-          {currentUser.role !== 'admin' && (
+          {currentUser.role !== 'admin' && !isUserRektor && (
             <>
               <li className={activeMenu === 'ajukan-izin' ? 'menu-item menu-active' : 'menu-item'} onClick={() => setActiveMenu('ajukan-izin')}>
                 <i className="fa-solid fa-file-pen icon-menu"></i> Form Permohonan Izin
@@ -630,7 +640,7 @@ function App() {
             </>
           )}
 
-          {isApproverUser && currentUser.role !== 'admin' && (
+          {isApproverUser && currentUser.role !== 'admin' && !isUserRektor && (
             <li className={activeMenu === 'persetujuan' ? 'menu-item menu-active' : 'menu-item'} onClick={() => setActiveMenu('persetujuan')}>
               <i className="fa-solid fa-list-check icon-menu"></i> Persetujuan Masuk
               {pendingApprovalsCount > 0 && (
@@ -660,7 +670,7 @@ function App() {
 
           {currentUser.role !== 'admin' && (
             <li className={activeMenu === 'riwayat' ? 'menu-item menu-active' : 'menu-item'} onClick={() => setActiveMenu('riwayat')}>
-              <i className="fa-solid fa-clock-rotate-left icon-menu"></i> Riwayat Saya
+              <i className="fa-solid fa-clock-rotate-left icon-menu"></i> {isUserRektor ? 'Riwayat Sistem' : 'Riwayat Saya'}
             </li>
           )}
         </ul>
@@ -682,7 +692,7 @@ function App() {
               {activeMenu === 'master-pegawai' && 'Manajemen Master Data Karyawan'}
               {activeMenu === 'master-izin-cuti' && 'Pengaturan Master Jenis Izin & Cuti'}
               {activeMenu === 'master-struktur' && 'Pengaturan Master Struktur & Unit Kerja'}
-              {activeMenu === 'riwayat' && (currentUser.role === 'admin' ? 'Rekapitulasi Global & Export Riwayat' : 'Riwayat Pengajuan Saya')}
+              {activeMenu === 'riwayat' && (currentUser.role === 'admin' ? 'Rekapitulasi Global & Export Riwayat' : 'Riwayat Pengajuan')}
             </h2>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
@@ -732,7 +742,7 @@ function App() {
             </div>
           )}
 
-          {activeMenu === 'ajukan-izin' && currentUser.role !== 'admin' && (
+          {activeMenu === 'ajukan-izin' && currentUser.role !== 'admin' && !isUserRektor && (
             <div className="form-container" style={{ maxWidth: '600px', margin: '0 auto' }}>
               <div style={{ borderBottom: '2px solid #f59e0b', paddingBottom: '10px', marginBottom: '15px' }}>
                 <h3 style={{ margin: 0, color: '#1e293b' }}>Formulir Permohonan Izin</h3>
@@ -769,7 +779,7 @@ function App() {
             </div>
           )}
 
-          {activeMenu === 'ajukan-cuti' && currentUser.role !== 'admin' && (
+          {activeMenu === 'ajukan-cuti' && currentUser.role !== 'admin' && !isUserRektor && (
             <div className="form-container" style={{ maxWidth: '600px', margin: '0 auto' }}>
               <div style={{ borderBottom: '2px solid #0284c7', paddingBottom: '10px', marginBottom: '15px' }}>
                 <h3 style={{ margin: 0, color: '#1e293b' }}>Formulir Permohonan Cuti</h3>
@@ -802,7 +812,7 @@ function App() {
             </div>
           )}
 
-          {activeMenu === 'persetujuan' && isApproverUser && currentUser.role !== 'admin' && (
+          {activeMenu === 'persetujuan' && isApproverUser && currentUser.role !== 'admin' && !isUserRektor && (
             <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', overflowX: 'auto' }}>
               <h3>Daftar Permohonan Masuk untuk {currentUser.jabatan}</h3>
               <table className="table-style" style={{ marginTop: '15px' }}>
@@ -988,7 +998,7 @@ function App() {
           {activeMenu === 'riwayat' && (
             <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', overflowX: 'auto' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '15px' }}>
-                <h3>{currentUser.role === 'admin' ? 'Rekapitulasi Global Permohonan Izin & Cuti' : 'Riwayat Pengajuan Saya'}</h3>
+                <h3>{currentUser.role === 'admin' ? 'Rekapitulasi Global Permohonan Izin & Cuti' : 'Riwayat Pengajuan'}</h3>
                 
                 {currentUser.role === 'admin' && (
                   <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
