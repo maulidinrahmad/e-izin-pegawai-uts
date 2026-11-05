@@ -53,6 +53,9 @@ function App() {
 
   const [filterPeriode, setFilterPeriode] = useState('semua');
   const [nilaiFilter, setNilaiFilter] = useState('');
+  
+  // State Filter Unit Kerja Khusus Rektor
+  const [filterUnitRektor, setFilterUnitRektor] = useState('semua');
 
   // ==========================================
   // 3. FIREBASE LISTENERS & RESET CUTI 1 JANUARI
@@ -237,7 +240,7 @@ function App() {
   };
 
   // ==========================================
-  // 6. LOGIKA MUTLAK PENYETUJU SPESIFIK & MENTOK DI REKTOR
+  // 6. LOGIKA MUTLAK PENYETUJU SPESIFIK & APPROVAL REKTOR
   // ==========================================
   const hitungDurasiHari = (tglMulai, tglSelesai) => {
     if (!tglMulai || !tglSelesai) return 0;
@@ -253,6 +256,17 @@ function App() {
     
     if (userObj.jabatan === 'Rektor' || userObj.role === 'rektor') {
       return 'Mandiri (Pucuk Pimpinan)';
+    }
+
+    // Warek 1, 2, 3, 4, Dekan, Kepala Badan disetujui langsung oleh Rektor
+    const isJabatanRektorApprover = [
+      'wakil rektor 1', 'warek 1', 'wakil rektor 2', 'warek 2',
+      'wakil rektor 3', 'warek 3', 'wakil rektor 4', 'warek 4',
+      'dekan', 'kepala badan'
+    ].includes(userObj.jabatan?.toLowerCase().trim());
+
+    if (isJabatanRektorApprover) {
+      return 'Rektor';
     }
 
     if (userObj.unitKerja?.includes('(WR 1)')) return 'Wakil Rektor 1';
@@ -386,7 +400,7 @@ function App() {
   };
 
   // ==========================================
-  // 7. FILTER PENGAMBILAN DATA (DIPERKETAT & MENDUKUNG "Warek 1" / "Wakil Rektor 1")
+  // 7. FILTER PENGAMBILAN DATA PERSETUJUAN & RIWAYAT
   // ==========================================
   const isUserRektor = currentUser?.jabatan === 'Rektor' || currentUser?.role === 'rektor';
   const isApproverUser = currentUser?.role === 'admin' || isUserRektor || strukturKampusUTS.some(s => s.approver.toLowerCase().includes(currentUser?.jabatan?.toLowerCase() || ''));
@@ -394,11 +408,19 @@ function App() {
   const getPendingForCurrentUser = () => {
     if (!currentUser) return [];
     
+    // Rektor menyetujui Warek 1, 2, 3, 4, Dekan, Kepala Badan
     if (isUserRektor) {
-      return []; 
+      return riwayatIzin.filter(i => {
+        if (!i.status || !i.status.includes('Menunggu Persetujuan')) return false;
+        const isBawahanRektor = [
+          'wakil rektor 1', 'warek 1', 'wakil rektor 2', 'warek 2',
+          'wakil rektor 3', 'warek 3', 'wakil rektor 4', 'warek 4',
+          'dekan', 'kepala badan'
+        ].includes(i.jabatan?.toLowerCase().trim());
+        return isBawahanRektor || i.targetApprover === 'Rektor';
+      });
     }
     
-    // Mendukung variasi penulisan "Wakil Rektor 1" atau "Warek 1"
     if (currentUser.jabatan === 'Wakil Rektor 1' || currentUser.jabatan === 'Warek 1') {
       return riwayatIzin.filter(i => {
         if (!i.status || !i.status.includes('Menunggu Persetujuan')) return false;
@@ -456,7 +478,12 @@ function App() {
 
   const getRiwayatForCurrentUser = () => {
     if (!currentUser) return [];
-    if (currentUser.role === 'admin') return riwayatIzin;
+    if (currentUser.role === 'admin' || isUserRektor) {
+      if (isUserRektor && filterUnitRektor !== 'semua') {
+        return riwayatIzin.filter(i => i.unitKerja === filterUnitRektor);
+      }
+      return riwayatIzin;
+    }
     return riwayatIzin.filter(i => i.nip === currentUser.nip);
   };
 
@@ -502,6 +529,9 @@ function App() {
       reader.readAsDataURL(file);
     }
   };
+
+  // List Unit Kerja Unik dari riwayat dan master untuk dropdown filter Rektor
+  const daftarUnitFilterRektor = [...new Set([...daftarUnitKerjaUnik, ...riwayatIzin.map(r => r.unitKerja).filter(Boolean)])];
 
   // ==========================================
   // 8. RENDER UI
@@ -640,7 +670,7 @@ function App() {
             </>
           )}
 
-          {isApproverUser && currentUser.role !== 'admin' && !isUserRektor && (
+          {isApproverUser && currentUser.role !== 'admin' && (
             <li className={activeMenu === 'persetujuan' ? 'menu-item menu-active' : 'menu-item'} onClick={() => setActiveMenu('persetujuan')}>
               <i className="fa-solid fa-list-check icon-menu"></i> Persetujuan Masuk
               {pendingApprovalsCount > 0 && (
@@ -692,7 +722,7 @@ function App() {
               {activeMenu === 'master-pegawai' && 'Manajemen Master Data Karyawan'}
               {activeMenu === 'master-izin-cuti' && 'Pengaturan Master Jenis Izin & Cuti'}
               {activeMenu === 'master-struktur' && 'Pengaturan Master Struktur & Unit Kerja'}
-              {activeMenu === 'riwayat' && (currentUser.role === 'admin' ? 'Rekapitulasi Global & Export Riwayat' : 'Riwayat Pengajuan')}
+              {activeMenu === 'riwayat' && (currentUser.role === 'admin' ? 'Rekapitulasi Global & Export Riwayat' : (isUserRektor ? 'Riwayat Sistem & Filter Unit' : 'Riwayat Pengajuan'))}
             </h2>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
@@ -812,7 +842,7 @@ function App() {
             </div>
           )}
 
-          {activeMenu === 'persetujuan' && isApproverUser && currentUser.role !== 'admin' && !isUserRektor && (
+          {activeMenu === 'persetujuan' && isApproverUser && currentUser.role !== 'admin' && (
             <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', overflowX: 'auto' }}>
               <h3>Daftar Permohonan Masuk untuk {currentUser.jabatan}</h3>
               <table className="table-style" style={{ marginTop: '15px' }}>
@@ -824,6 +854,7 @@ function App() {
                     <th className="th-cell">Jenis & Tanggal</th>
                     <th className="th-cell">Durasi</th>
                     <th className="th-cell">Keterangan</th>
+                    <th className="th-cell">Dokumen / Bukti</th>
                     <th className="th-cell">Aksi</th>
                   </tr>
                 </thead>
@@ -838,6 +869,15 @@ function App() {
                         <td className="td-cell">{item.durasi} Hari</td>
                         <td className="td-cell">{item.keterangan}</td>
                         <td className="td-cell">
+                          {item.fileDataUrl ? (
+                            <a href={item.fileDataUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', padding: '4px 8px', backgroundColor: '#0284c7', color: '#fff', borderRadius: '4px', fontSize: '11px', textDecoration: 'none', fontWeight: 'bold' }}>
+                              <i className="fa-solid fa-paperclip"></i> Lihat Dokumen
+                            </a>
+                          ) : (
+                            <span style={{ fontSize: '12px', color: '#94a3b8' }}>Tidak Ada</span>
+                          )}
+                        </td>
+                        <td className="td-cell">
                           <div style={{ display: 'flex', gap: '5px' }}>
                             <button onClick={() => handleProsesPersetujuan(item.docId, item, 'Disetujui')} style={{ ...styles.btnAction, backgroundColor: '#059669' }}>Setujui</button>
                             <button onClick={() => handleProsesPersetujuan(item.docId, item, 'Ditolak')} style={{ ...styles.btnAction, backgroundColor: '#ef4444' }}>Tolak</button>
@@ -846,7 +886,7 @@ function App() {
                       </tr>
                     ))
                   ) : (
-                    <tr><td colSpan="7" style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>Tidak ada permohonan baru untuk Anda.</td></tr>
+                    <tr><td colSpan="8" style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>Tidak ada permohonan baru untuk Anda.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -998,29 +1038,44 @@ function App() {
           {activeMenu === 'riwayat' && (
             <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', overflowX: 'auto' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '15px' }}>
-                <h3>{currentUser.role === 'admin' ? 'Rekapitulasi Global Permohonan Izin & Cuti' : 'Riwayat Pengajuan'}</h3>
+                <h3>{currentUser.role === 'admin' ? 'Rekapitulasi Global Permohonan Izin & Cuti' : (isUserRektor ? 'Riwayat Sistem (Filter Fakultas / Badan / Unit Kerja)' : 'Riwayat Pengajuan')}</h3>
                 
-                {currentUser.role === 'admin' && (
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                    <select value={filterPeriode} onChange={(e) => setFilterPeriode(e.target.value)} className="form-input" style={{ width: '130px', padding: '6px' }}>
-                      <option value="semua">Semua Waktu</option>
-                      <option value="bulan">Per Bulan</option>
-                      <option value="tahun">Per Tahun</option>
-                    </select>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  {/* Filter Khusus Rektor untuk memilih Fakultas / Badan / Unit Kerja */}
+                  {isUserRektor && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <label style={{ fontSize: '13px', fontWeight: 'bold' }}>Filter Unit/Fakultas:</label>
+                      <select value={filterUnitRektor} onChange={(e) => setFilterUnitRektor(e.target.value)} className="form-input" style={{ width: '220px', padding: '6px' }}>
+                        <option value="semua">-- Semua Unit / Fakultas --</option>
+                        {daftarUnitFilterRektor.map((u, idx) => (
+                          <option key={idx} value={u}>{u}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
-                    {filterPeriode === 'bulan' && (
-                      <input type="month" value={nilaiFilter} onChange={(e) => setNilaiFilter(e.target.value)} className="form-input" style={{ padding: '6px' }} />
-                    )}
+                  {currentUser.role === 'admin' && (
+                    <>
+                      <select value={filterPeriode} onChange={(e) => setFilterPeriode(e.target.value)} className="form-input" style={{ width: '130px', padding: '6px' }}>
+                        <option value="semua">Semua Waktu</option>
+                        <option value="bulan">Per Bulan</option>
+                        <option value="tahun">Per Tahun</option>
+                      </select>
 
-                    {filterPeriode === 'tahun' && (
-                      <input type="number" placeholder="YYYY" value={nilaiFilter} onChange={(e) => setNilaiFilter(e.target.value)} className="form-input" style={{ width: '100px', padding: '6px' }} />
-                    )}
+                      {filterPeriode === 'bulan' && (
+                        <input type="month" value={nilaiFilter} onChange={(e) => setNilaiFilter(e.target.value)} className="form-input" style={{ padding: '6px' }} />
+                      )}
 
-                    <button onClick={handleExportExcel} style={{ padding: '8px 14px', backgroundColor: '#059669', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <i className="fa-solid fa-file-excel"></i> Export Excel
-                    </button>
-                  </div>
-                )}
+                      {filterPeriode === 'tahun' && (
+                        <input type="number" placeholder="YYYY" value={nilaiFilter} onChange={(e) => setNilaiFilter(e.target.value)} className="form-input" style={{ width: '100px', padding: '6px' }} />
+                      )}
+
+                      <button onClick={handleExportExcel} style={{ padding: '8px 14px', backgroundColor: '#059669', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <i className="fa-solid fa-file-excel"></i> Export Excel
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
 
               <table className="table-style" style={{ marginTop: '15px' }}>
@@ -1031,6 +1086,7 @@ function App() {
                     <th className="th-cell">Unit Kerja</th>
                     <th className="th-cell">Jenis & Tanggal</th>
                     <th className="th-cell">Durasi</th>
+                    <th className="th-cell">Dokumen</th>
                     <th className="th-cell">Status</th>
                   </tr>
                 </thead>
@@ -1043,11 +1099,20 @@ function App() {
                         <td className="td-cell">{item.unitKerja} ({item.jabatan})</td>
                         <td className="td-cell"><b>{item.jenis}</b><br/><small>{item.tglMulai} s/d {item.tglSelesai}</small></td>
                         <td className="td-cell">{item.durasi} Hari</td>
+                        <td className="td-cell">
+                          {item.fileDataUrl ? (
+                            <a href={item.fileDataUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#0284c7', textDecoration: 'underline', fontSize: '12px' }}>
+                              <i className="fa-solid fa-file"></i> Unduh
+                            </a>
+                          ) : (
+                            <span style={{ fontSize: '12px', color: '#94a3b8' }}>-</span>
+                          )}
+                        </td>
                         <td className="td-cell"><span className={item.status.includes('Disetujui') ? 'badge-success' : 'badge'}>{item.status}</span></td>
                       </tr>
                     ))
                   ) : (
-                    <tr><td colSpan="6" style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>Tidak ada data riwayat.</td></tr>
+                    <tr><td colSpan="7" style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>Tidak ada data riwayat.</td></tr>
                   )}
                 </tbody>
               </table>
