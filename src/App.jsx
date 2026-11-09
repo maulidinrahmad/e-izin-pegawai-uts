@@ -258,7 +258,6 @@ function App() {
       return 'Mandiri (Pucuk Pimpinan)';
     }
 
-    // Warek 1, 2, 3, 4, Dekan, Kepala Badan disetujui langsung oleh Rektor
     const isJabatanRektorApprover = [
       'wakil rektor 1', 'warek 1', 'wakil rektor 2', 'warek 2',
       'wakil rektor 3', 'warek 3', 'wakil rektor 4', 'warek 4',
@@ -318,6 +317,7 @@ function App() {
         fileDataUrl: formIzin.fileDataUrl || '',
         status: initialStatus,
         targetApprover: targetApprover,
+        alasanPenolakan: '',
         timestamp: new Date().toISOString()
       });
       alert(`Permohonan IZIN berhasil dikirim! Status: ${initialStatus}`);
@@ -368,6 +368,7 @@ function App() {
         fileDataUrl: '',
         status: initialStatus,
         targetApprover: targetApprover,
+        alasanPenolakan: '',
         timestamp: new Date().toISOString()
       });
       alert(`Permohonan CUTI berhasil dikirim! Status: ${initialStatus}`);
@@ -380,10 +381,20 @@ function App() {
 
   const handleProsesPersetujuan = async (docId, targetItem, statusKeputusan) => {
     const isApprove = statusKeputusan === 'Disetujui';
+    let alasanTolak = '';
+
+    if (!isApprove) {
+      alasanTolak = prompt('Masukkan alasan / keterangan penolakan permohonan ini:');
+      if (alasanTolak === null) return; // Batal jika user cancel
+    }
+
     const finalStatusText = isApprove ? `Disetujui oleh ${currentUser.jabatan}` : `Ditolak oleh ${currentUser.jabatan}`;
 
     try {
-      await updateDoc(doc(db, "riwayatIzin", docId), { status: finalStatusText });
+      await updateDoc(doc(db, "riwayatIzin", docId), { 
+        status: finalStatusText,
+        alasanPenolakan: alasanTolak || ''
+      });
 
       if (isApprove && targetItem.kategori === 'Cuti') {
         const foundPgw = daftarPegawai.find(p => p.nip === targetItem.nip);
@@ -408,7 +419,6 @@ function App() {
   const getPendingForCurrentUser = () => {
     if (!currentUser) return [];
     
-    // Rektor menyetujui Warek 1, 2, 3, 4, Dekan, Kepala Badan
     if (isUserRektor) {
       return riwayatIzin.filter(i => {
         if (!i.status || !i.status.includes('Menunggu Persetujuan')) return false;
@@ -487,6 +497,43 @@ function App() {
     return riwayatIzin.filter(i => i.nip === currentUser.nip);
   };
 
+  // Helper untuk mendapatkan daftar pegawai di bawah bawahan penyetuju untuk ditampilkan di Dashboard
+  const getBawahanForDashboard = () => {
+    if (!currentUser) return [];
+    const todayStr = new Date().toISOString().slice(0, 10);
+
+    let filteredPegawai = [];
+
+    if (isUserRektor || currentUser.role === 'admin') {
+      filteredPegawai = daftarPegawai.filter(p => p.username !== 'rektor' && p.role !== 'admin');
+    } else if (currentUser.jabatan?.includes('Wakil Rektor') || currentUser.jabatan?.includes('Warek')) {
+      const wrCode = currentUser.jabatan.slice(-1);
+      filteredPegawai = daftarPegawai.filter(p => p.unitKerja?.includes(`(WR ${wrCode})`));
+    } else if (currentUser.jabatan === 'Dekan') {
+      filteredPegawai = daftarPegawai.filter(p => p.unitKerja?.toLowerCase() === currentUser.unitKerja?.toLowerCase());
+    } else if (currentUser.jabatan === 'Kaprodi') {
+      filteredPegawai = daftarPegawai.filter(p => p.prodi?.toLowerCase() === currentUser.prodi?.toLowerCase());
+    } else {
+      // Default fallback unit kerja sama
+      filteredPegawai = daftarPegawai.filter(p => p.unitKerja === currentUser.unitKerja && p.nip !== currentUser.nip);
+    }
+
+    // Tentukan status aktif / izin / cuti hari ini berdasarkan riwayat yang disetujui
+    return filteredPegawai.map(p => {
+      const activeIzinCuti = riwayatIzin.find(r => 
+        r.nip === p.nip &&
+        r.status?.includes('Disetujui') &&
+        r.tglMulai <= todayStr &&
+        r.tglSelesai >= todayStr
+      );
+
+      return {
+        ...p,
+        statusAktifHariIni: activeIzinCuti ? `Sedang ${activeIzinCuti.kategori} (${activeIzinCuti.jenis})` : 'Aktif Bekerja'
+      };
+    });
+  };
+
   const handleExportExcel = () => {
     let dataToExport = getRiwayatForCurrentUser();
     if (filterPeriode === 'bulan' && nilaiFilter) {
@@ -530,7 +577,6 @@ function App() {
     }
   };
 
-  // List Unit Kerja Unik dari riwayat dan master untuk dropdown filter Rektor
   const daftarUnitFilterRektor = [...new Set([...daftarUnitKerjaUnik, ...riwayatIzin.map(r => r.unitKerja).filter(Boolean)])];
 
   // ==========================================
@@ -769,6 +815,52 @@ function App() {
                   Atasan Penyetuju Izin/Cuti Anda: <b style={{ color: '#0284c7' }}>{getTargetApprover(currentUser)}</b>
                 </p>
               </div>
+
+              {/* TAMBAHAN FITUR 1: DAFTAR PEGAWAI DI BAWAH AKUN PENYETUJU DENGAN STATUS AKTIF/CUTI */}
+              {isApproverUser && currentUser.role !== 'admin' && (
+                <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', marginTop: '20px', overflowX: 'auto', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                  <h3 style={{ margin: '0 0 15px 0', color: '#1e293b', fontSize: '16px' }}>
+                    <i className="fa-solid fa-users"></i> Daftar Pegawai & Status Keaktifan (Cakupan: {currentUser.jabatingan || currentUser.jabatan})
+                  </h3>
+                  <table className="table-style">
+                    <thead>
+                      <tr className="th-tr">
+                        <th className="th-cell">No</th>
+                        <th className="th-cell">Nama Pegawai & NIP</th>
+                        <th className="th-cell">Unit Kerja / Prodi</th>
+                        <th className="th-cell">Jabatan</th>
+                        <th className="th-cell">Status Hari Ini</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {getBawahanForDashboard().length > 0 ? (
+                        getBawahanForDashboard().map((p, idx) => (
+                          <tr key={p.docId || idx} className="td-tr">
+                            <td className="td-cell">{idx + 1}</td>
+                            <td className="td-cell"><b>{p.nama}</b><br/><small>{p.nip}</small></td>
+                            <td className="td-cell">{p.unitKerja} {p.prodi && p.prodi !== '-' ? `(${p.prodi})` : ''}</td>
+                            <td className="td-cell">{p.jabatan}</td>
+                            <td className="td-cell">
+                              <span style={{ 
+                                padding: '3px 8px', 
+                                borderRadius: '10px', 
+                                fontSize: '11px', 
+                                fontWeight: 'bold', 
+                                backgroundColor: p.statusAktifHariIni === 'Aktif Bekerja' ? '#dcfce7' : '#fef3c7', 
+                                color: p.statusAktifHariIni === 'Aktif Bekerja' ? '#15803d' : '#b45309' 
+                              }}>
+                                {p.statusAktifHariIni}
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr><td colSpan="5" style={{ textAlign: 'center', padding: '15px', color: '#94a3b8' }}>Belum ada data pegawai di bawah cakupan Anda.</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 
@@ -1041,7 +1133,6 @@ function App() {
                 <h3>{currentUser.role === 'admin' ? 'Rekapitulasi Global Permohonan Izin & Cuti' : (isUserRektor ? 'Riwayat Sistem (Filter Fakultas / Badan / Unit Kerja)' : 'Riwayat Pengajuan')}</h3>
                 
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                  {/* Filter Khusus Rektor untuk memilih Fakultas / Badan / Unit Kerja */}
                   {isUserRektor && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                       <label style={{ fontSize: '13px', fontWeight: 'bold' }}>Filter Unit/Fakultas:</label>
@@ -1087,7 +1178,7 @@ function App() {
                     <th className="th-cell">Jenis & Tanggal</th>
                     <th className="th-cell">Durasi</th>
                     <th className="th-cell">Dokumen</th>
-                    <th className="th-cell">Status</th>
+                    <th className="th-cell">Status & Keterangan Tolak</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1108,7 +1199,14 @@ function App() {
                             <span style={{ fontSize: '12px', color: '#94a3b8' }}>-</span>
                           )}
                         </td>
-                        <td className="td-cell"><span className={item.status.includes('Disetujui') ? 'badge-success' : 'badge'}>{item.status}</span></td>
+                        <td className="td-cell">
+                          <span className={item.status.includes('Disetujui') ? 'badge-success' : 'badge'}>{item.status}</span>
+                          {item.alasanPenolakan && (
+                            <div style={{ marginTop: '4px', fontSize: '11px', color: '#ef4444' }}>
+                              <b>Alasan Ditolak:</b> {item.alasanPenolakan}
+                            </div>
+                          )}
+                        </td>
                       </tr>
                     ))
                   ) : (
